@@ -1,0 +1,14 @@
+[package]
+name = "who-pays-whom"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+bgpkit-broker = "0.10.1"
+bgpkit-parser = "0.14.0"
+clap = "4.5.54"
+env_logger = "0.11.8"
+ipnet = "2.11.0"
+log = "0.4.29"
+rayon = "1.11.0"
+reqwest = { version = "0.13.1", features = ["blocking"] }
