@@ -1,16 +1,122 @@
-pub mod peer_data {
+pub mod global_peerings {
     use crate::asn::asn_data::AsnData;
-    use crate::mrt_route::route::Route;
+    use crate::comm_mappings::community_mappings::{PeerLocation, PeerType};
+    use crate::mrt_route::route::{IpVersion, Route};
     use bgpkit_parser::models::Asn;
     use core::panic;
     use log::{debug, info};
     use std::collections::HashMap;
     use std::collections::hash_map::{Keys, Values};
+    use std::hash::Hash;
 
-    /// Public API which provides access to all peers of a given ASN.
     #[derive(Debug)]
-    pub struct PeerData {
-        data: HashMap<Asn, AsnData>,
+    pub struct PeeringsByVersion {
+        peerings: HashMap<IpVersion, Route>,
+    }
+
+    impl PeeringsByVersion {
+        pub fn get_route_by_version(&self, route: &Route) -> &Route {
+            self.peerings.get(route.get_ip_version()).unwrap()
+        }
+
+        pub fn has_peerings_with_version(&self, route: &Route) -> bool {
+            self.peerings.contains_key(route.get_ip_version())
+        }
+
+        pub fn has_peering(&self, route: &Route) -> bool {
+            if self.has_peerings_with_version(route) {
+                let peering_route = self.get_route_by_version(route);
+                return peering_route == route;
+            }
+            false
+        }
+    }
+
+    /// All peerings for a single location, keyed by peer type
+    #[derive(Debug)]
+    pub struct PeeringsInLocation {
+        peerings: HashMap<PeerType, PeeringsByVersion>,
+    }
+
+    impl PeeringsInLocation {
+        pub fn get_type_peerings(&self, route: &Route) -> &PeeringsByVersion {
+            self.peerings.get(route.get_peer_type()).unwrap()
+        }
+
+        pub fn has_peerings_with_type(&self, route: &Route) -> bool {
+            self.peerings.contains_key(route.get_peer_type())
+        }
+
+        pub fn has_peering(&self, route: &Route) -> bool {
+            if self.has_peerings_with_type(route) {
+                let type_peerings = self.get_type_peerings(route);
+                return type_peerings.has_peering(route);
+            }
+            false
+        }
+    }
+
+    /// All peerings for a single peer ASN, keyed by peer location
+    #[derive(Debug)]
+    pub struct LocationPeerings {
+        location_peerings: HashMap<PeerLocation, PeeringsInLocation>,
+    }
+
+    impl LocationPeerings {
+        pub fn new() -> LocationPeerings {
+            LocationPeerings {
+                location_peerings: HashMap::new(),
+            }
+        }
+
+        pub fn get_peerings_in(&self, route: &Route) -> &PeeringsInLocation {
+            self.location_peerings
+                .get(route.get_peer_location())
+                .unwrap()
+        }
+
+        pub fn has_peerings_in_location(&self, route: &Route) -> bool {
+            self.location_peerings
+                .contains_key(route.get_peer_location())
+        }
+
+        pub fn has_peering(&self, route: &Route) -> bool {
+            if self.has_peerings_in_location(route) {
+                let location_peerings = self.get_peerings_in(route);
+                return location_peerings.has_peering(route);
+            }
+            false
+        }
+    }
+
+    /// Peering data for an ASN, keyed by peer ASN
+    #[derive(Debug)]
+    pub struct AsnPeerings {
+        peers: HashMap<Asn, LocationPeerings>,
+    }
+
+    impl AsnPeerings {
+        pub fn get_peerings_for(&self, route: &Route) -> &LocationPeerings {
+            self.peers.get(route.get_peer_as()).unwrap()
+        }
+
+        pub fn has_peering_with(&self, route: &Route) -> bool {
+            self.peers.contains_key(route.get_peer_as())
+        }
+
+        pub fn has_peering(&self, route: &Route) -> bool {
+            if self.has_peering_with(route) {
+                let location_peerings = self.get_peerings_for(route);
+                return location_peerings.has_peering(route);
+            }
+            false
+        }
+    }
+
+    /// Public API which provides access to all peerings
+    #[derive(Debug)]
+    pub struct GlobalPeerings {
+        global_peerings: HashMap<Asn, AsnPeerings>,
     }
 
     // impl Default for PathData {
@@ -25,11 +131,27 @@ pub mod peer_data {
     //     }
     // }
 
-    impl PeerData {
+    impl GlobalPeerings {
         pub fn new() -> Self {
-            PeerData {
-                data: HashMap::<Asn, AsnData>::new(),
+            GlobalPeerings {
+                global_peerings: HashMap::<Asn, AsnPeerings>::new(),
             }
+        }
+
+        pub fn has_data_for(&self, route: &Route) -> bool {
+            self.global_peerings.contains_key(route.get_local_as())
+        }
+
+        fn get_asn_data(&self, route: &Route) -> &AsnPeerings {
+            self.global_peerings.get(route.get_local_as()).unwrap()
+        }
+
+        pub fn has_peering(&self, route: &Route) -> bool {
+            if self.has_data_for(route) {
+                let asn_data = self.get_asn_data(route);
+                return asn_data.has_peering(route);
+            }
+            false
         }
 
         // fn add_as_path(&mut self, as_path: Vec<Asn>) {

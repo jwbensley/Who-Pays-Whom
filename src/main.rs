@@ -1,6 +1,6 @@
 pub mod args;
 pub mod asn;
-pub mod data;
+pub mod comm_mappings;
 pub mod http;
 pub mod logging;
 pub mod mrt_asn;
@@ -8,6 +8,7 @@ pub mod mrt_communities;
 pub mod mrt_large_communities;
 pub mod mrt_route;
 pub mod parse;
+pub mod peerings;
 pub mod ribs;
 
 use crate::ribs::rib_getter::RibFile;

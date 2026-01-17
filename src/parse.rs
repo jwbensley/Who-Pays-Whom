@@ -1,13 +1,14 @@
 pub mod rib_parser {
-    use crate::data::peer_data::PeerData;
-    use crate::mrt_communities::communities::Communities;
+    use crate::comm_mappings::community_mappings::AsnMappings;
+    use crate::mrt_asn::asn::Tier1Asn;
+    use crate::mrt_communities::standard_communities::StandardCommunities;
     use crate::mrt_large_communities::large_communities::LargeCommunities;
-    use crate::mrt_route::route::Route;
+    use crate::mrt_route::route::{IpVersion, Route};
+    use crate::peerings::global_peerings::GlobalPeerings;
     use crate::ribs::rib_getter::RibFile;
     use bgpkit_parser::models::{
-        AsPathSegment, Asn, AttrFlags, AttrType, Attribute, AttributeValue, Community,
-        LargeCommunity, MrtMessage, Peer, RibAfiEntries, RibEntry, TableDumpV2Message,
-        TableDumpV2Type,
+        AsPathSegment, Asn, AttrFlags, AttrType, Attribute, AttributeValue, MrtMessage, Peer,
+        RibAfiEntries, RibEntry, TableDumpV2Message, TableDumpV2Type,
     };
     use bgpkit_parser::{BgpkitParser, MrtRecord};
     use ipnet::IpNet;
@@ -18,7 +19,7 @@ pub mod rib_parser {
     use std::net::IpAddr;
 
     /// Parse a list of RIB files in parallel
-    pub fn find_peer_data(rib_files: &Vec<RibFile>, threads: &u32) -> PeerData {
+    pub fn find_peer_data(rib_files: &Vec<RibFile>, threads: &u32) -> GlobalPeerings {
         info!("Paring {} RIB files", rib_files.len());
         debug!(
             "{:?}",
@@ -28,24 +29,25 @@ pub mod rib_parser {
                 .collect::<Vec<&String>>()
         );
 
+        let asn_mappings = AsnMappings::new();
+
         ThreadPoolBuilder::new()
             .num_threads((*threads).try_into().unwrap())
             .build_global()
             .unwrap();
 
-        let peer_data = PeerData::new();
+        let global_peerings = GlobalPeerings::new();
 
-        rib_files
-            .into_par_iter()
-            .map(|rib_file| parse_rib_file(rib_file.filename.clone()));
+        rib_files.into_par_iter().map(|rib_file| {
+            parse_rib_file(rib_file.filename.clone(), &asn_mappings, &global_peerings)
+        });
 
-        peer_data
+        global_peerings
     }
 
-    fn parse_rib_file(fp: String) {
+    fn parse_rib_file(fp: String, asn_mappings: &AsnMappings, global_peerings: &GlobalPeerings) {
         info!("Parsing {}", fp);
 
-        let mut peer_data = PeerData::new();
         let mut count: u32 = 0;
         let mut id_peer_map = HashMap::<u16, Peer>::new();
 
@@ -60,7 +62,14 @@ pub mod rib_parser {
                 continue;
             }
 
-            parse_rib_entries(&mrt_entry, &mut peer_data, &id_peer_map, &fp, &count);
+            parse_rib_entries(
+                &mrt_entry,
+                global_peerings,
+                &id_peer_map,
+                asn_mappings,
+                &fp,
+                &count,
+            );
 
             count += 1;
         }
@@ -86,8 +95,9 @@ pub mod rib_parser {
 
     fn parse_rib_entries(
         mrt_entry: &MrtRecord,
-        peer_data: &mut PeerData,
+        global_peerings: &GlobalPeerings,
         id_peer_map: &HashMap<u16, Peer>,
+        asn_mappings: &AsnMappings,
         fp: &String,
         count: &u32,
     ) {
@@ -103,21 +113,43 @@ pub mod rib_parser {
         });
 
         for rib_entry in &rib_entries.rib_entries {
+            let prefix = rib_entries.prefix.prefix;
+            let ip_version;
+            if prefix.to_string().contains(".") {
+                ip_version = IpVersion::Ipv4
+            } else {
+                ip_version = IpVersion::Ipv6
+            }
             let next_hop = get_next_hop(rib_entry, fp, count);
             let communities = get_communities(rib_entry);
             let large_communities = get_large_communities(rib_entry);
-            let as_sequence = get_as_sequence(rib_entry, fp, count);
+            let mut as_sequence = get_as_sequence(rib_entry, fp, count);
+            as_sequence.dedup();
 
-            for asn in as_sequence {
-                // peer_data.insert_route(Route::new(
-                //     as_sequence.clone(),
-                //     fp.clone(),
-                //     next_hop,
-                //     id_peer_map[&rib_entry.peer_index],
-                //     rib_entries.prefix.prefix,
-                //     communities.clone(),
-                //     large_communities.clone(),
-                // ));
+            for local_asn in &as_sequence {
+                if local_asn.is_t1() {
+                    let peer_asn =
+                        &as_sequence[as_sequence.iter().position(|x| x == local_asn).unwrap() + 1];
+
+                    if peer_asn.is_t1() {
+                        let peer_location = communities.get_peer_location(local_asn, asn_mappings);
+                        let peer_type = communities.get_peer_type(local_asn, asn_mappings);
+                        let route = Route::new(
+                            local_asn.clone(),
+                            peer_asn.clone(),
+                            peer_type.clone(),
+                            peer_location.clone(),
+                            as_sequence.clone(),
+                            fp.clone(),
+                            next_hop,
+                            id_peer_map[&rib_entry.peer_index],
+                            prefix,
+                            ip_version.clone(),
+                            communities.clone(),
+                            large_communities.clone(),
+                        );
+                    }
+                }
             }
         }
     }
@@ -195,7 +227,7 @@ pub mod rib_parser {
         }
     }
 
-    fn get_communities(rib_entry: &RibEntry) -> Communities {
+    fn get_communities(rib_entry: &RibEntry) -> StandardCommunities {
         if let AttributeValue::Communities(communities) = rib_entry
             .attributes
             .get_attr(AttrType::COMMUNITIES)
@@ -205,9 +237,9 @@ pub mod rib_parser {
             })
             .value
         {
-            Communities::new(communities)
+            StandardCommunities::from_iter(communities)
         } else {
-            Communities::new(Vec::new())
+            StandardCommunities::from_iter(Vec::new())
         }
     }
 
