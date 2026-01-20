@@ -1,50 +1,76 @@
 pub mod global_peerings {
-    use crate::asn::asn_data::AsnData;
     use crate::comm_mappings::community_mappings::{PeerLocation, PeerType};
     use crate::mrt_route::route::{IpVersion, Route};
     use bgpkit_parser::models::Asn;
-    use core::panic;
-    use log::{debug, info};
     use std::collections::HashMap;
-    use std::collections::hash_map::{Keys, Values};
-    use std::hash::Hash;
 
     #[derive(Debug)]
     pub struct PeeringsByVersion {
-        peerings: HashMap<IpVersion, Route>,
+        peerings_by_ver: HashMap<IpVersion, Route>,
+    }
+
+    impl Default for PeeringsByVersion {
+        fn default() -> Self {
+            Self::new(HashMap::<IpVersion, Route>::new())
+        }
     }
 
     impl PeeringsByVersion {
-        pub fn get_route_by_version(&self, route: &Route) -> &Route {
-            self.peerings.get(route.get_ip_version()).unwrap()
+        pub fn new(peerings_by_ver: HashMap<IpVersion, Route>) -> PeeringsByVersion {
+            PeeringsByVersion { peerings_by_ver }
         }
 
-        pub fn has_peerings_with_version(&self, route: &Route) -> bool {
-            self.peerings.contains_key(route.get_ip_version())
+        pub fn add_peering(&mut self, route: Route) {
+            if self.has_peering(&route) {
+                return;
+            }
+            self.peerings_by_ver
+                .insert(route.get_ip_version().clone(), route);
         }
+
+        // pub fn get_route_by_version(&self, route: &Route) -> &Route {
+        //     self.peerings_by_ver.get(route.get_ip_version()).unwrap()
+        // }
 
         pub fn has_peering(&self, route: &Route) -> bool {
-            if self.has_peerings_with_version(route) {
-                let peering_route = self.get_route_by_version(route);
-                return peering_route == route;
-            }
-            false
+            self.peerings_by_ver.contains_key(route.get_ip_version())
         }
     }
 
     /// All peerings for a single location, keyed by peer type
     #[derive(Debug)]
     pub struct PeeringsInLocation {
-        peerings: HashMap<PeerType, PeeringsByVersion>,
+        peerings_in_loc: HashMap<PeerType, PeeringsByVersion>,
+    }
+
+    impl Default for PeeringsInLocation {
+        fn default() -> Self {
+            Self::new(HashMap::<PeerType, PeeringsByVersion>::new())
+        }
     }
 
     impl PeeringsInLocation {
-        pub fn get_type_peerings(&self, route: &Route) -> &PeeringsByVersion {
-            self.peerings.get(route.get_peer_type()).unwrap()
+        pub fn new(peerings_in_loc: HashMap<PeerType, PeeringsByVersion>) -> PeeringsInLocation {
+            PeeringsInLocation { peerings_in_loc }
+        }
+
+        pub fn add_peering(&mut self, route: Route) {
+            if self.has_peering(&route) {
+                return;
+            }
+
+            let peer_type = route.get_peer_type().clone();
+            let mut peerings_by_ver = PeeringsByVersion::default();
+            peerings_by_ver.add_peering(route);
+            self.peerings_in_loc.insert(peer_type, peerings_by_ver);
+        }
+
+        fn get_type_peerings(&self, route: &Route) -> &PeeringsByVersion {
+            self.peerings_in_loc.get(route.get_peer_type()).unwrap()
         }
 
         pub fn has_peerings_with_type(&self, route: &Route) -> bool {
-            self.peerings.contains_key(route.get_peer_type())
+            self.peerings_in_loc.contains_key(route.get_peer_type())
         }
 
         pub fn has_peering(&self, route: &Route) -> bool {
@@ -62,14 +88,32 @@ pub mod global_peerings {
         location_peerings: HashMap<PeerLocation, PeeringsInLocation>,
     }
 
+    impl Default for LocationPeerings {
+        fn default() -> Self {
+            Self::new(HashMap::<PeerLocation, PeeringsInLocation>::new())
+        }
+    }
+
     impl LocationPeerings {
-        pub fn new() -> LocationPeerings {
-            LocationPeerings {
-                location_peerings: HashMap::new(),
-            }
+        pub fn new(
+            location_peerings: HashMap<PeerLocation, PeeringsInLocation>,
+        ) -> LocationPeerings {
+            LocationPeerings { location_peerings }
         }
 
-        pub fn get_peerings_in(&self, route: &Route) -> &PeeringsInLocation {
+        pub fn add_peering(&mut self, route: Route) {
+            if self.has_peering(&route) {
+                return;
+            }
+
+            let peer_location = route.get_peer_location().clone();
+            let mut peerings_in_loc = PeeringsInLocation::default();
+            peerings_in_loc.add_peering(route);
+            self.location_peerings
+                .insert(peer_location, peerings_in_loc);
+        }
+
+        fn get_peerings_in(&self, route: &Route) -> &PeeringsInLocation {
             self.location_peerings
                 .get(route.get_peer_location())
                 .unwrap()
@@ -95,7 +139,28 @@ pub mod global_peerings {
         peers: HashMap<Asn, LocationPeerings>,
     }
 
+    impl Default for AsnPeerings {
+        fn default() -> Self {
+            Self::new(HashMap::<Asn, LocationPeerings>::new())
+        }
+    }
+
     impl AsnPeerings {
+        pub fn new(peers: HashMap<Asn, LocationPeerings>) -> AsnPeerings {
+            AsnPeerings { peers }
+        }
+
+        pub fn add_peering(&mut self, route: Route) {
+            if self.has_peering(&route) {
+                return;
+            }
+
+            let peer_asn = route.get_peer_as().to_owned();
+            let mut location_peering = LocationPeerings::default();
+            location_peering.add_peering(route);
+            self.peers.insert(peer_asn, location_peering);
+        }
+
         pub fn get_peerings_for(&self, route: &Route) -> &LocationPeerings {
             self.peers.get(route.get_peer_as()).unwrap()
         }
@@ -113,37 +178,40 @@ pub mod global_peerings {
         }
     }
 
-    /// Public API which provides access to all peerings
+    /// Public API which provides access to all peerings, keyed by local ASN
     #[derive(Debug)]
     pub struct GlobalPeerings {
         global_peerings: HashMap<Asn, AsnPeerings>,
     }
 
-    // impl Default for PathData {
-    //     fn default() -> Self {
-    //         Self::new()
-    //     }
-    // }
-
-    // impl PartialEq for PathData {
-    //     fn eq(&self, other: &Self) -> bool {
-    //         self.as_paths == other.as_paths
-    //     }
-    // }
+    impl Default for GlobalPeerings {
+        fn default() -> Self {
+            Self::new(HashMap::<Asn, AsnPeerings>::new())
+        }
+    }
 
     impl GlobalPeerings {
-        pub fn new() -> Self {
-            GlobalPeerings {
-                global_peerings: HashMap::<Asn, AsnPeerings>::new(),
-            }
+        pub fn new(global_peerings: HashMap<Asn, AsnPeerings>) -> Self {
+            GlobalPeerings { global_peerings }
         }
 
-        pub fn has_data_for(&self, route: &Route) -> bool {
-            self.global_peerings.contains_key(route.get_local_as())
+        pub fn add_peering(&mut self, route: Route) {
+            if self.has_peering(&route) {
+                return;
+            }
+
+            let local_asn = route.get_local_as().to_owned();
+            let mut asn_peerings = AsnPeerings::default();
+            asn_peerings.add_peering(route);
+            self.global_peerings.insert(local_asn, asn_peerings);
         }
 
         fn get_asn_data(&self, route: &Route) -> &AsnPeerings {
             self.global_peerings.get(route.get_local_as()).unwrap()
+        }
+
+        fn has_data_for(&self, route: &Route) -> bool {
+            self.global_peerings.contains_key(route.get_local_as())
         }
 
         pub fn has_peering(&self, route: &Route) -> bool {
@@ -153,213 +221,5 @@ pub mod global_peerings {
             }
             false
         }
-
-        // fn add_as_path(&mut self, as_path: Vec<Asn>) {
-        //     let origin_as_paths = self.get_as_paths_for_origin_mut(as_path.last().unwrap());
-        //     let asp = AsPath::new(as_path);
-        //     origin_as_paths.add_as_path(asp);
-        // }
-
-        // fn add_origin(&mut self, origin: Asn) {
-        //     if self.has_as_paths_for_origin(&origin) {
-        //         return;
-        //     };
-        //     self.as_paths.insert(origin, OriginAsPaths::new(origin));
-        // }
-
-        // fn add_origin_as_paths(&mut self, origin: &Asn, origin_as_paths: &OriginAsPaths) {
-        //     if !self.has_as_paths_for_origin(origin) {
-        //         self.add_origin(*origin);
-        //     }
-        //     self.get_as_paths_for_origin_mut(origin)
-        //         .merge_from(origin_as_paths);
-        // }
-
-        // fn add_route(&mut self, route: Route) {
-        //     self.get_as_paths_for_origin_mut(route.get_origin())
-        //         .add_route(route);
-        // }
-
-        // pub fn find_origins_with_divergent_paths(&self) {
-        //     info!("Searching for divergent paths");
-        //     for origin_as_paths in self.get_as_paths() {
-        //         let divergent_paths = origin_as_paths.find_divergent_paths();
-        //         println!("{:#?}", divergent_paths);
-        //         if true {
-        //             break;
-        //         }
-        //     }
-        // }
-
-        // fn get_as_paths(&self) -> Values<'_, Asn, OriginAsPaths> {
-        //     self.as_paths.values()
-        // }
-
-        // pub fn get_as_paths_count(&self) -> usize {
-        //     let mut total = 0;
-        //     for origin_as_paths in self.get_as_paths() {
-        //         total += origin_as_paths.len();
-        //     }
-        //     total
-        // }
-
-        // fn get_as_paths_for_origin(&self, origin: &Asn) -> &OriginAsPaths {
-        //     if self.has_as_paths_for_origin(origin) {
-        //         self.as_paths.get(origin).unwrap()
-        //     } else {
-        //         panic!("No paths for origin {}", origin);
-        //     }
-        // }
-
-        // fn get_as_paths_for_origin_mut(&mut self, origin: &Asn) -> &mut OriginAsPaths {
-        //     if self.has_as_paths_for_origin(origin) {
-        //         self.as_paths.get_mut(origin).unwrap()
-        //     } else {
-        //         panic!("No paths for origin {}", origin);
-        //     }
-        // }
-
-        // fn get_origins(&self) -> Keys<'_, Asn, OriginAsPaths> {
-        //     self.as_paths.keys()
-        // }
-
-        // pub fn get_origins_count(&self) -> usize {
-        //     self.as_paths.len()
-        // }
-
-        // fn has_as_paths_for_origin(&self, origin: &Asn) -> bool {
-        //     debug!(
-        //         "Existing paths for origin {}: {}",
-        //         origin,
-        //         self.as_paths.contains_key(origin)
-        //     );
-        //     self.as_paths.contains_key(origin)
-        // }
-
-        // fn has_route(&self, route: &Route) -> bool {
-        //     let origin = route.get_origin();
-        //     if !self.has_as_paths_for_origin(origin) {
-        //         return false;
-        //     };
-        //     self.get_as_paths_for_origin(origin).has_route(route)
-        // }
-
-        // pub fn insert_route(&mut self, route: Route) {
-        //     debug!("Adding route {:#?}", route);
-        //     if !self.has_route(&route) {
-        //         self.add_origin(*route.get_origin());
-        //         self.add_as_path(route.get_as_path().clone());
-        //         self.add_route(route);
-        //     }
-        // }
-
-        // /// Copy all origins and their AS paths from other to self
-        // pub fn merge_from(&mut self, other: &Self) {
-        //     for origin in other.get_origins() {
-        //         self.add_origin_as_paths(origin, other.get_as_paths_for_origin(origin));
-        //     }
-        // }
-
-        // /// Merge pairs of PathData objs, delete the 2nd object from each pair,
-        // /// then merge the remaining objs in pairs. Continue until only one obj is left.
-        // pub fn merge_path_data(mut all_path_data: Vec<PathData>) -> PathData {
-        //     info!("Merging {} objects", all_path_data.len());
-        //     let origins: usize = all_path_data.iter().map(|d| d.get_origins_count()).sum();
-        //     let as_paths: usize = all_path_data.iter().map(|d| d.get_as_paths_count()).sum();
-        //     info!("Pre-merge, {} origins, {} AS paths", origins, as_paths);
-
-        //     if all_path_data.is_empty() {
-        //         panic!("No sequences to merge!");
-        //     } else if all_path_data.len() == 1 {
-        //         debug!("Only 1 item, nothing to merge");
-        //         return all_path_data.pop().unwrap();
-        //     }
-
-        //     while all_path_data.len() > 1 {
-        //         for chunks in all_path_data.chunks_mut(2) {
-        //             if let [seq1, seq2] = chunks {
-        //                 seq1.merge_from(seq2);
-        //             }
-        //         }
-
-        //         let to_delete = all_path_data.len() / 2; // rounds down
-        //         let mut deleted = 0;
-        //         let mut index = 1;
-
-        //         while deleted < to_delete {
-        //             for i in 0..all_path_data.len() {
-        //                 // ^ Up to but not including
-
-        //                 if i == index {
-        //                     all_path_data.remove(i);
-        //                     deleted += 1;
-        //                     index += 1;
-        //                     break;
-        //                 }
-        //             }
-        //         }
-        //     }
-
-        //     assert!(all_path_data.len() == 1);
-        //     let path_data = all_path_data.pop().unwrap();
-        //     info!(
-        //         "Post-merge, {} origins, {} AS paths",
-        //         path_data.get_origins_count(),
-        //         path_data.get_as_paths_count()
-        //     );
-
-        //     path_data
-        // }
-
-        // fn remove_as_paths_for_origin(&mut self, origin: &Asn) {
-        //     if self.has_as_paths_for_origin(origin) {
-        //         debug!("Removing AS paths for origin {}", origin);
-        //         self.as_paths.remove(origin);
-        //     } else {
-        //         panic!(
-        //             "Attempt to remove AS paths for non-existing origin {}",
-        //             origin
-        //         );
-        //     }
-        // }
-
-        // /// Remove origins which only have a single AS path
-        // pub fn remove_origins_with_single_as_path(&mut self) {
-        //     info!("Removing origins with only one AS path");
-
-        //     let mut to_remove = Vec::new();
-        //     for origin in self.get_origins() {
-        //         if self.get_as_paths_for_origin(origin).len() == 1 {
-        //             to_remove.push(origin.to_owned());
-        //         }
-        //     }
-
-        //     debug!("Removing {} origins with single AS path", to_remove.len(),);
-        //     for origin in to_remove.iter() {
-        //         self.remove_as_paths_for_origin(origin);
-        //     }
-
-        //     info!(
-        //         "Remaining multi-path origins {}, with {} AS paths",
-        //         self.get_origins_count(),
-        //         self.get_as_paths_count()
-        //     );
-        // }
-
-        // /// Remove AS Paths which only have a single ASN in the path
-        // pub fn remove_single_hop_as_paths(&mut self) {
-        //     info!("Removing single-hop AS paths");
-
-        //     for mut origin_as_paths in self.get_as_paths().cloned().collect::<Vec<OriginAsPaths>>()
-        //     {
-        //         origin_as_paths.remove_single_hop_paths();
-        //     }
-
-        //     info!(
-        //         "Remaining origins {}, with {} multi-hop AS paths",
-        //         self.get_origins_count(),
-        //         self.get_as_paths_count()
-        //     );
-        // }
     }
 }

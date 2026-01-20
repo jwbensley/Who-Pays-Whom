@@ -9,65 +9,74 @@ pub mod standard_communities {
 
     #[derive(Clone, Debug, Eq, PartialEq)]
     pub struct StandardCommunity {
-        community: Community,
+        standard_community: Community,
     }
 
     impl Hash for StandardCommunity {
         fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-            core::mem::discriminant(self).hash(state);
+            core::mem::discriminant(&self.standard_community).hash(state);
         }
     }
 
     impl StandardCommunity {
-        pub fn new(asn: u32, value: u16) -> StandardCommunity {
+        pub fn new(asn: u32, value: u16) -> Self {
             StandardCommunity {
-                community: Community::Custom(Asn::new_32bit(asn), value),
+                standard_community: Community::Custom(Asn::new_32bit(asn), value),
             }
         }
 
-        pub fn from(c: Community) -> StandardCommunity {
-            StandardCommunity { community: c }
+        pub fn from(standard_community: Community) -> Self {
+            StandardCommunity { standard_community }
         }
 
         pub fn get_asn(&self) -> Asn {
-            if let Community::Custom(asn, _) = self.community {
-                return asn;
+            if let Community::Custom(asn, _) = self.standard_community {
+                asn
             } else {
-                panic!("Couldn't unpack community valies from: {}", self.community);
+                panic!(
+                    "Couldn't unpack standard community ASN from: {}",
+                    self.standard_community
+                );
             }
         }
 
         // pub fn get_values(&self) -> (Asn, u16) {
-        //     if let Community::Custom(asn, value) = self.community {
+        //     if let Community::Custom(asn, value) = self.standard_community {
         //         return (asn, value);
         //     } else {
-        //         panic!("Couldn't unpack community valies from: {}", self.community);
+        //         panic!("Couldn't unpack standard community value from: {}", self.standard_community);
         //     }
         // }
     }
 
     #[derive(Clone, Debug, Eq, PartialEq)]
     pub struct StandardCommunities {
-        communities: Vec<StandardCommunity>,
+        standard_communities: Vec<StandardCommunity>,
+    }
+
+    impl Default for StandardCommunities {
+        fn default() -> Self {
+            Self::new(Vec::<StandardCommunity>::new())
+        }
     }
 
     impl StandardCommunities {
-        pub fn new() -> Self {
+        pub fn new(standard_communities: Vec<StandardCommunity>) -> Self {
             StandardCommunities {
-                communities: Vec::<StandardCommunity>::new(),
+                standard_communities,
             }
         }
 
         pub fn add(&mut self, c: StandardCommunity) {
-            self.communities.push(c);
+            self.standard_communities.push(c);
         }
 
         pub fn get_peer_location<'a>(
             &'a self,
             local_asn: &Asn,
             asn_mappings: &'a AsnMappings,
-        ) -> &PeerLocation {
-            for standard_community in &self.communities {
+        ) -> &'a PeerLocation {
+            for standard_community in &self.standard_communities {
                 let community_asn = standard_community.get_asn();
                 if &community_asn == local_asn {
                     return asn_mappings
@@ -85,8 +94,8 @@ pub mod standard_communities {
             &'a self,
             local_asn: &Asn,
             asn_mappings: &'a AsnMappings,
-        ) -> &PeerType {
-            for standard_community in &self.communities {
+        ) -> &'a PeerType {
+            for standard_community in &self.standard_communities {
                 let community_asn = standard_community.get_asn();
                 if &community_asn == local_asn {
                     return asn_mappings
@@ -103,11 +112,11 @@ pub mod standard_communities {
 
     impl FromIterator<Community> for StandardCommunities {
         fn from_iter<T: IntoIterator<Item = Community>>(iter: T) -> Self {
-            let mut sc = StandardCommunities::new();
-            for i in iter {
-                sc.add(StandardCommunity::from(i));
+            let mut standard_communities = StandardCommunities::default();
+            for item in iter {
+                standard_communities.add(StandardCommunity::from(item));
             }
-            sc
+            standard_communities
         }
     }
 }

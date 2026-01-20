@@ -5,12 +5,18 @@ pub mod large_communities {
 
     #[derive(Clone, Debug, Eq, PartialEq)]
     pub struct LargeCommunities {
-        data: Vec<LargeCommunity>,
+        large_communities: Vec<LargeCommunity>,
+    }
+
+    impl Default for LargeCommunities {
+        fn default() -> Self {
+            Self::new(Vec::<LargeCommunity>::new())
+        }
     }
 
     impl LargeCommunities {
-        pub fn new(d: Vec<LargeCommunity>) -> Self {
-            LargeCommunities { data: d }
+        pub fn new(large_communities: Vec<LargeCommunity>) -> Self {
+            LargeCommunities { large_communities }
         }
     }
 }

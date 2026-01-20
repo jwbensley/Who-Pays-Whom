@@ -263,6 +263,11 @@ Unconfirmed
 6939:9006 	Learned in Oceania
 6939:9007 	Learned in Middle East
 
+6939:1000       Hurricane Customer
+6939:7XXX      Router      Router ID  
+6939:8XXX      Country      ISO 3166 Country Code https://en.wikipedia.org/wiki/ISO_3166-1#Current_codes  
+6939:9XXX      Region      Region ID (1=North America, 2=EU, 3=APAC, 4=Africa, 5=South America, 6=Oceania, 7=Middle East)
+
 
 
 Unconfirmed

@@ -1,5 +1,4 @@
 pub mod args;
-pub mod asn;
 pub mod comm_mappings;
 pub mod http;
 pub mod logging;
@@ -33,5 +32,5 @@ fn main() {
             .collect()
     };
 
-    let _peer_data = parse::rib_parser::find_peer_data(&rib_files, &args.threads);
+    parse::rib_parser::find_peer_data(&rib_files, &args.threads);
 }

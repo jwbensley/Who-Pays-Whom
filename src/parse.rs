@@ -17,9 +17,10 @@ pub mod rib_parser {
     use rayon::iter::{IntoParallelIterator, ParallelIterator};
     use std::collections::HashMap;
     use std::net::IpAddr;
+    use std::sync::{Arc, RwLock};
 
     /// Parse a list of RIB files in parallel
-    pub fn find_peer_data(rib_files: &Vec<RibFile>, threads: &u32) -> GlobalPeerings {
+    pub fn find_peer_data(rib_files: &Vec<RibFile>, threads: &u32) {
         info!("Paring {} RIB files", rib_files.len());
         debug!(
             "{:?}",
@@ -30,22 +31,27 @@ pub mod rib_parser {
         );
 
         let asn_mappings = AsnMappings::new();
+        let global_peerings = Arc::new(RwLock::new(GlobalPeerings::default()));
 
         ThreadPoolBuilder::new()
             .num_threads((*threads).try_into().unwrap())
             .build_global()
             .unwrap();
 
-        let global_peerings = GlobalPeerings::new();
-
-        rib_files.into_par_iter().map(|rib_file| {
-            parse_rib_file(rib_file.filename.clone(), &asn_mappings, &global_peerings)
+        let _ = rib_files.into_par_iter().map(|rib_file| {
+            parse_rib_file(
+                &rib_file.filename,
+                &asn_mappings,
+                Arc::clone(&global_peerings),
+            )
         });
-
-        global_peerings
     }
 
-    fn parse_rib_file(fp: String, asn_mappings: &AsnMappings, global_peerings: &GlobalPeerings) {
+    fn parse_rib_file(
+        fp: &String,
+        asn_mappings: &AsnMappings,
+        global_peerings: Arc<RwLock<GlobalPeerings>>,
+    ) {
         info!("Parsing {}", fp);
 
         let mut count: u32 = 0;
@@ -56,18 +62,18 @@ pub mod rib_parser {
 
         for mrt_entry in parser.into_record_iter() {
             if count == 0 {
-                id_peer_map = get_peer_id_map(&fp);
+                id_peer_map = get_peer_id_map(fp);
                 debug!("Peer Map for {}: {:#?}\n", fp, id_peer_map);
                 count += 1;
                 continue;
             }
 
-            parse_rib_entries(
+            parse_mrt_entry(
                 &mrt_entry,
-                global_peerings,
+                &global_peerings,
                 &id_peer_map,
                 asn_mappings,
-                &fp,
+                fp,
                 &count,
             );
 
@@ -93,9 +99,9 @@ pub mod rib_parser {
         }
     }
 
-    fn parse_rib_entries(
+    fn parse_mrt_entry(
         mrt_entry: &MrtRecord,
-        global_peerings: &GlobalPeerings,
+        global_peerings: &Arc<RwLock<GlobalPeerings>>,
         id_peer_map: &HashMap<u16, Peer>,
         asn_mappings: &AsnMappings,
         fp: &String,
@@ -114,29 +120,37 @@ pub mod rib_parser {
 
         for rib_entry in &rib_entries.rib_entries {
             let prefix = rib_entries.prefix.prefix;
-            let ip_version;
-            if prefix.to_string().contains(".") {
-                ip_version = IpVersion::Ipv4
+            let ip_version = if prefix.to_string().contains(".") {
+                IpVersion::Ipv4
             } else {
-                ip_version = IpVersion::Ipv6
-            }
+                IpVersion::Ipv6
+            };
             let next_hop = get_next_hop(rib_entry, fp, count);
             let communities = get_communities(rib_entry);
             let large_communities = get_large_communities(rib_entry);
             let mut as_sequence = get_as_sequence(rib_entry, fp, count);
             as_sequence.dedup();
 
-            for local_asn in &as_sequence {
-                if local_asn.is_t1() {
-                    let peer_asn =
-                        &as_sequence[as_sequence.iter().position(|x| x == local_asn).unwrap() + 1];
+            for asn_1 in as_sequence.iter() {
+                // We could see up to three T1 ASNs in a row e.g. AS3 AS2 AS1 AS65535.
+                // AS3 peers with AS2, AS1 is transit customer of AS2 (despite being "Tier 1").
+                // 65535 is transit customer of AS1.
+                // In this case we need to check AS3-AS2 communities and AS2-AS1 communities.
+                if asn_1.is_t1() {
+                    let pos_1 = as_sequence.iter().position(|x| x == asn_1).unwrap();
+                    if pos_1 == as_sequence.len() - 1 {
+                        // Last ASN in the path
+                        continue;
+                    }
 
-                    if peer_asn.is_t1() {
-                        let peer_location = communities.get_peer_location(local_asn, asn_mappings);
-                        let peer_type = communities.get_peer_type(local_asn, asn_mappings);
+                    let pos_2 = pos_1 + 1;
+                    let asn_2 = &as_sequence[pos_2];
+                    if asn_2.is_t1() {
+                        let peer_location = communities.get_peer_location(asn_1, asn_mappings);
+                        let peer_type = communities.get_peer_type(asn_1, asn_mappings);
                         let route = Route::new(
-                            local_asn.clone(),
-                            peer_asn.clone(),
+                            *asn_1,
+                            *asn_2,
                             peer_type.clone(),
                             peer_location.clone(),
                             as_sequence.clone(),
@@ -148,6 +162,52 @@ pub mod rib_parser {
                             communities.clone(),
                             large_communities.clone(),
                         );
+
+                        let has_peering: bool;
+                        {
+                            let gb_lock = global_peerings.read().unwrap();
+                            has_peering = gb_lock.has_peering(&route);
+                        }
+                        if !has_peering {
+                            let mut gb_lock = global_peerings.write().unwrap();
+                            gb_lock.add_peering(route);
+                        }
+
+                        if pos_2 == as_sequence.len() - 1 {
+                            // Last ASN in the path
+                            continue;
+                        }
+
+                        let pos_3 = pos_2 + 1;
+                        let asn_3 = &as_sequence[pos_3];
+                        if asn_3.is_t1() {
+                            let peer_location = communities.get_peer_location(asn_2, asn_mappings);
+                            let peer_type = communities.get_peer_type(asn_2, asn_mappings);
+                            let route = Route::new(
+                                *asn_2,
+                                *asn_3,
+                                peer_type.clone(),
+                                peer_location.clone(),
+                                as_sequence.clone(),
+                                fp.clone(),
+                                next_hop,
+                                id_peer_map[&rib_entry.peer_index],
+                                prefix,
+                                ip_version.clone(),
+                                communities.clone(),
+                                large_communities.clone(),
+                            );
+
+                            let has_peering: bool;
+                            {
+                                let gb_lock = global_peerings.read().unwrap();
+                                has_peering = gb_lock.has_peering(&route);
+                            }
+                            if !has_peering {
+                                let mut gb_lock = global_peerings.write().unwrap();
+                                gb_lock.add_peering(route);
+                            }
+                        }
                     }
                 }
             }
@@ -255,12 +315,12 @@ pub mod rib_parser {
         {
             LargeCommunities::new(large_communities)
         } else {
-            LargeCommunities::new(Vec::new())
+            LargeCommunities::default()
         }
     }
 
     /// Split the segments of the AS Path into an AS Sequence and an AS Set.
-    /// The likelihood of there being more than on AS Sequnece (because the path)
+    /// The likelihood of there being more than on AS Sequence (because the path)
     /// is longer than 255 ASNs is incredibly low. Also, because we're looking for
     /// T1 AS path, we're not interested in AS_SETs.
     fn get_as_sequence(rib_entry: &RibEntry, fp: &String, count: &u32) -> Vec<Asn> {
