@@ -5,18 +5,18 @@ Who is attaching "learned from peer" communities, and who is attaching "learned 
 
 https://www.cogentco.com/files/docs/customer_service/guide/global_cogent_customer_user_guide.pdf
 
-174:21001 Route is NA internal or customer route.
-174:21101 Route is an EU internal or customer route.
-174:21201 Route is an AP internal or customer route.
-174:21301 Route is a SA internal or customer route.
-174:21401 Route is an AU internal or customer route.
-174:21501 Route is an AF internal or customer route.
 174:21000 Route is learned from NA (North America) non-customer.
+174:21001 Route is NA internal or customer route.
 174:21100 Route is learned from EU (Europe) non-customer.
+174:21101 Route is an EU internal or customer route.
 174:21200 Route is learned from AP (Asia Pacific) non-customer.
+174:21201 Route is an AP internal or customer route.
 174:21300 Route is learned from SA (South America) non-customer.
+174:21301 Route is a SA internal or customer route.
 174:21400 Route is learned from AU (Australia) non-customer.
+174:21401 Route is an AU internal or customer route.
 174:21500 Route is learned from AF (Africa) non-customer.
+174:21501 Route is an AF internal or customer route.
 
 
 
@@ -24,7 +24,7 @@ https://www.cogentco.com/files/docs/customer_service/guide/global_cogent_custome
 https://onestep.net/documents/as701-bordergateproto.pdf
 https://www.verizon.com/business/why-verizon/looking-glass/
 
-0:201 - Leanred from customer
+0:201 - Learned from customer
 0:203 - Learned from peer
 
 
@@ -278,6 +278,8 @@ Unconfirmed
 
 
 Unconfirmed - https://telxius.com/en/looking-glass-service/
+12956:321 Learned from peer?
+12956:322 Learned from customer?
    	12956:4001 	Learned in Europe
   	12956:4002 	Learned in South/Central America
   	12956:4003 	Learned in North America

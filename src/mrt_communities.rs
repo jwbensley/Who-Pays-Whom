@@ -1,11 +1,11 @@
 pub mod standard_communities {
+    use crate::comm_mappings::community_mappings::AsnMappings;
     use crate::comm_mappings::community_mappings::{PeerLocation, PeerType};
     use bgpkit_parser::models::Asn;
     use bgpkit_parser::models::Community;
+    use log::debug;
     use std::hash::Hash;
     use std::vec::Vec;
-
-    use crate::comm_mappings::community_mappings::AsnMappings;
 
     #[derive(Clone, Debug, Eq, PartialEq)]
     pub struct StandardCommunity {
@@ -29,22 +29,23 @@ pub mod standard_communities {
             StandardCommunity { standard_community }
         }
 
-        pub fn get_asn(&self) -> Asn {
-            if let Community::Custom(asn, _) = self.standard_community {
-                asn
+        pub fn get_asn(&self) -> Option<&Asn> {
+            if let Community::Custom(asn, _) = &self.standard_community {
+                Some(asn)
             } else {
-                panic!(
-                    "Couldn't unpack standard community ASN from: {}",
+                debug!(
+                    "Couldn't unpack ASN from standard community: {}",
                     self.standard_community
                 );
+                None
             }
         }
 
-        // pub fn get_values(&self) -> (Asn, u16) {
-        //     if let Community::Custom(asn, value) = self.standard_community {
+        // pub fn get_values(&self) -> (&Asn, &u16) {
+        //     if let Community::Custom(asn, value) = &self.standard_community {
         //         return (asn, value);
         //     } else {
-        //         panic!("Couldn't unpack standard community value from: {}", self.standard_community);
+        //         panic!("Couldn't unpack value from standard community: {}", self.standard_community);
         //     }
         // }
     }
@@ -77,17 +78,19 @@ pub mod standard_communities {
             asn_mappings: &'a AsnMappings,
         ) -> &'a PeerLocation {
             for standard_community in &self.standard_communities {
-                let community_asn = standard_community.get_asn();
-                if &community_asn == local_asn {
-                    return asn_mappings
-                        .get_asn_peer_location(local_asn, standard_community)
-                        .unwrap();
+                if let Some(community_asn) = standard_community.get_asn()
+                    && community_asn == local_asn
+                    && let Some(peer_location) =
+                        asn_mappings.get_asn_peer_location(local_asn, standard_community)
+                {
+                    return peer_location;
                 }
             }
-            panic!(
+            debug!(
                 "Couldn't get peer location for ASN {} from: {:#?}",
                 local_asn, self
-            )
+            );
+            &PeerLocation::NoneFound
         }
 
         pub fn get_peer_type<'a>(
@@ -96,17 +99,19 @@ pub mod standard_communities {
             asn_mappings: &'a AsnMappings,
         ) -> &'a PeerType {
             for standard_community in &self.standard_communities {
-                let community_asn = standard_community.get_asn();
-                if &community_asn == local_asn {
-                    return asn_mappings
-                        .get_asn_peer_type(local_asn, standard_community)
-                        .unwrap();
+                if let Some(community_asn) = standard_community.get_asn()
+                    && community_asn == local_asn
+                    && let Some(peer_type) =
+                        asn_mappings.get_asn_peer_type(local_asn, standard_community)
+                {
+                    return peer_type;
                 }
             }
-            panic!(
+            debug!(
                 "Couldn't get peer type for ASN {} from: {:#?}",
                 local_asn, self
-            )
+            );
+            &PeerType::NoneFound
         }
     }
 

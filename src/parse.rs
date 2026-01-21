@@ -1,5 +1,5 @@
 pub mod rib_parser {
-    use crate::comm_mappings::community_mappings::AsnMappings;
+    use crate::comm_mappings::community_mappings::{AsnMappings, PeerLocation, PeerType};
     use crate::mrt_asn::asn::Tier1Asn;
     use crate::mrt_communities::standard_communities::StandardCommunities;
     use crate::mrt_large_communities::large_communities::LargeCommunities;
@@ -21,7 +21,7 @@ pub mod rib_parser {
 
     /// Parse a list of RIB files in parallel
     pub fn find_peer_data(rib_files: &Vec<RibFile>, threads: &u32) {
-        info!("Paring {} RIB files", rib_files.len());
+        info!("Going to parse {} RIB files", rib_files.len());
         debug!(
             "{:?}",
             rib_files
@@ -30,7 +30,7 @@ pub mod rib_parser {
                 .collect::<Vec<&String>>()
         );
 
-        let asn_mappings = AsnMappings::new();
+        let asn_mappings = AsnMappings::default();
         let global_peerings = Arc::new(RwLock::new(GlobalPeerings::default()));
 
         ThreadPoolBuilder::new()
@@ -38,7 +38,7 @@ pub mod rib_parser {
             .build_global()
             .unwrap();
 
-        let _ = rib_files.into_par_iter().map(|rib_file| {
+        rib_files.into_par_iter().for_each(|rib_file| {
             parse_rib_file(
                 &rib_file.filename,
                 &asn_mappings,
@@ -81,6 +81,8 @@ pub mod rib_parser {
         }
 
         info!("Parsed {} records in {}.", count, fp,);
+
+        info! {"{:#?}", global_peerings.read().unwrap()};
     }
 
     /// Return the mapping of peer IDs to peer details
@@ -96,6 +98,83 @@ pub mod rib_parser {
             peer_table.id_peer_map.clone()
         } else {
             panic!("Couldn't extract peer table from table dump in {}", fp);
+        }
+    }
+
+    fn build_route(
+        rib_entry: &RibEntry,
+        fp: &String,
+        count: &u32,
+        asn_mappings: &AsnMappings,
+        local_asn: &Asn,
+        peer_asn: &Asn,
+        as_sequence: &Vec<Asn>,
+        peer: &Peer,
+        prefix: &IpNet,
+    ) -> Route {
+        let next_hop = get_next_hop(rib_entry, fp, count);
+        let communities = get_communities(rib_entry);
+        let large_communities = get_large_communities(rib_entry);
+        let peer_location = communities.get_peer_location(local_asn, asn_mappings);
+        let peer_type = communities.get_peer_type(local_asn, asn_mappings);
+        let ip_version = if prefix.to_string().contains(".") {
+            IpVersion::Ipv4
+        } else {
+            IpVersion::Ipv6
+        };
+
+        Route::new(
+            *local_asn,
+            *peer_asn,
+            peer_type.clone(),
+            peer_location.clone(),
+            as_sequence.clone(),
+            fp.clone(),
+            next_hop.to_owned(),
+            peer.to_owned(),
+            prefix.to_owned(),
+            ip_version.clone(),
+            communities.clone(),
+            large_communities.clone(),
+        )
+    }
+
+    fn check_peering(
+        rib_entry: &RibEntry,
+        fp: &String,
+        count: &u32,
+        asn_mappings: &AsnMappings,
+        local_asn: &Asn,
+        peer_asn: &Asn,
+        as_sequence: &Vec<Asn>,
+        peer: &Peer,
+        prefix: &IpNet,
+        global_peerings: &Arc<RwLock<GlobalPeerings>>,
+    ) {
+        let route = build_route(
+            rib_entry,
+            fp,
+            count,
+            asn_mappings,
+            local_asn,
+            peer_asn,
+            as_sequence,
+            peer,
+            prefix,
+        );
+
+        if *route.get_peer_type() != PeerType::NoneFound
+            && *route.get_peer_location() != PeerLocation::NoneFound
+        {
+            let has_peering: bool;
+            {
+                let gb_lock = global_peerings.read().unwrap();
+                has_peering = gb_lock.has_peering(&route);
+            }
+            if !has_peering {
+                let mut gb_lock = global_peerings.write().unwrap();
+                gb_lock.add_peering(route);
+            }
         }
     }
 
@@ -118,16 +197,9 @@ pub mod rib_parser {
             )
         });
 
+        let prefix = rib_entries.prefix.prefix;
+
         for rib_entry in &rib_entries.rib_entries {
-            let prefix = rib_entries.prefix.prefix;
-            let ip_version = if prefix.to_string().contains(".") {
-                IpVersion::Ipv4
-            } else {
-                IpVersion::Ipv6
-            };
-            let next_hop = get_next_hop(rib_entry, fp, count);
-            let communities = get_communities(rib_entry);
-            let large_communities = get_large_communities(rib_entry);
             let mut as_sequence = get_as_sequence(rib_entry, fp, count);
             as_sequence.dedup();
 
@@ -140,73 +212,45 @@ pub mod rib_parser {
                     let pos_1 = as_sequence.iter().position(|x| x == asn_1).unwrap();
                     if pos_1 == as_sequence.len() - 1 {
                         // Last ASN in the path
-                        continue;
+                        break;
                     }
 
                     let pos_2 = pos_1 + 1;
                     let asn_2 = &as_sequence[pos_2];
                     if asn_2.is_t1() {
-                        let peer_location = communities.get_peer_location(asn_1, asn_mappings);
-                        let peer_type = communities.get_peer_type(asn_1, asn_mappings);
-                        let route = Route::new(
-                            *asn_1,
-                            *asn_2,
-                            peer_type.clone(),
-                            peer_location.clone(),
-                            as_sequence.clone(),
-                            fp.clone(),
-                            next_hop,
-                            id_peer_map[&rib_entry.peer_index],
-                            prefix,
-                            ip_version.clone(),
-                            communities.clone(),
-                            large_communities.clone(),
+                        check_peering(
+                            rib_entry,
+                            fp,
+                            count,
+                            asn_mappings,
+                            asn_1,
+                            asn_2,
+                            &as_sequence,
+                            &id_peer_map[&rib_entry.peer_index],
+                            &prefix,
+                            global_peerings,
                         );
-
-                        let has_peering: bool;
-                        {
-                            let gb_lock = global_peerings.read().unwrap();
-                            has_peering = gb_lock.has_peering(&route);
-                        }
-                        if !has_peering {
-                            let mut gb_lock = global_peerings.write().unwrap();
-                            gb_lock.add_peering(route);
-                        }
 
                         if pos_2 == as_sequence.len() - 1 {
                             // Last ASN in the path
-                            continue;
+                            break;
                         }
 
                         let pos_3 = pos_2 + 1;
                         let asn_3 = &as_sequence[pos_3];
                         if asn_3.is_t1() {
-                            let peer_location = communities.get_peer_location(asn_2, asn_mappings);
-                            let peer_type = communities.get_peer_type(asn_2, asn_mappings);
-                            let route = Route::new(
-                                *asn_2,
-                                *asn_3,
-                                peer_type.clone(),
-                                peer_location.clone(),
-                                as_sequence.clone(),
-                                fp.clone(),
-                                next_hop,
-                                id_peer_map[&rib_entry.peer_index],
-                                prefix,
-                                ip_version.clone(),
-                                communities.clone(),
-                                large_communities.clone(),
+                            check_peering(
+                                rib_entry,
+                                fp,
+                                count,
+                                asn_mappings,
+                                asn_2,
+                                asn_3,
+                                &as_sequence,
+                                &id_peer_map[&rib_entry.peer_index],
+                                &prefix,
+                                global_peerings,
                             );
-
-                            let has_peering: bool;
-                            {
-                                let gb_lock = global_peerings.read().unwrap();
-                                has_peering = gb_lock.has_peering(&route);
-                            }
-                            if !has_peering {
-                                let mut gb_lock = global_peerings.write().unwrap();
-                                gb_lock.add_peering(route);
-                            }
                         }
                     }
                 }

@@ -31,7 +31,7 @@ pub mod rib_getter {
         }
     }
 
-    /// Return a list of availabe RIBs for a specific day (with details like download URL)
+    /// Return a list of available RIBs for a specific day (with details like download URL)
     fn get_rib_list_for_day(date: &str, dir: &str) -> Vec<RibFile> {
         let broker = BgpkitBroker::new().ts_start(date).ts_end(date);
         let ribs = broker.daily_ribs().unwrap();
@@ -47,13 +47,11 @@ pub mod rib_getter {
                 String::from("route-views")
             };
 
-            let mut filename = if rib.collector_id.starts_with(&source) {
-                format!("{}.{}", rib.collector_id, basename)
+            let filename = if rib.collector_id.starts_with(&source) {
+                format!("{}/{}.{}", dir, rib.collector_id, basename)
             } else {
-                format!("{}.{}.{}", &source, rib.collector_id, basename)
+                format!("{}/{}.{}.{}", dir, &source, rib.collector_id, basename)
             };
-
-            filename.insert_str(0, dir);
 
             rib_files.push(RibFile {
                 url: rib.url,
