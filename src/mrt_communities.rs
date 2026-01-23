@@ -1,6 +1,6 @@
 pub mod standard_communities {
     use crate::comm_mappings::community_mappings::AsnMappings;
-    use crate::comm_mappings::community_mappings::{PeerLocation, PeerType};
+    use crate::peer_data::peer_data::{PeerLocation, PeerType};
     use bgpkit_parser::models::Asn;
     use bgpkit_parser::models::Community;
     use log::debug;

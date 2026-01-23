@@ -1,6 +1,6 @@
 pub mod global_peerings {
-    use crate::comm_mappings::community_mappings::{PeerLocation, PeerType};
     use crate::mrt_route::route::{IpVersion, Route};
+    use crate::peer_data::peer_data::{PeerLocation, PeerType};
     use bgpkit_parser::models::Asn;
     use std::collections::HashMap;
 

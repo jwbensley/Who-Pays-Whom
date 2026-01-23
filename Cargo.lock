@@ -2461,6 +2461,7 @@ dependencies = [
  "ipnet",
  "log",
  "rayon",
+ "regex",
  "reqwest 0.13.1",
 ]
 

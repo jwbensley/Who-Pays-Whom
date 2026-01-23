@@ -32,31 +32,31 @@ https://www.verizon.com/business/why-verizon/looking-glass/
 
 https://www.vodafone.com/business/privacy/customer-taggable-community-attribute-values
 https://portal.vodafone.com/web/lookingglass
-
-  	1273:11xxx 	customer route (North America)
-  	1273:12xxx 	customer route (Europe)
-  	1273:13xxx 	customer route (Asia)
-  	1273:14xxx 	customer route (Australia)
-  	1273:15xxx 	customer route (South America)
-    1273:16xxx 	customer route (Africa)        -> Unconfirmed
-    1273:17xxx 	customer route (Middle East)   -> Unconfirmed
-    1273:18xxx 	customer route (India)         -> Unconfirmed
-  	1273:21xxx 	peer route (North America)
-  	1273:22xxx 	peer route (Europe)
-  	1273:23xxx 	peer route (Asia)
-  	1273:24xxx 	peer route (Australia)
-  	1273:25xxx 	peer route (South America)
-    1273:26xxx 	peer route (Africa)            -> Unconfirmed
-    1273:27xxx 	peer route (Middle East)       -> Unconfirmed
-    1273:28xxx 	peer route (India)             -> Unconfirmed
-  	1273:31xxx 	upstream route (North America)
-  	1273:32xxx 	upstream route (Europe)
-  	1273:33xxx 	upstream route (Asia)
-  	1273:34xxx 	upstream route (Australia)
-  	1273:35xxx 	upstream route (South America)
-    1273:36xxx 	upstream route (Africa)        -> Unconfirmed
-    1273:37xxx 	upstream route (Middle East)   -> Unconfirmed
-    1273:38xxx 	upstream route (India)         -> Unconfirmed
+Emailed Ben, waiting for response:
+      1273:11xxx   customer route (North America)
+      1273:12xxx   customer route (Europe)
+      1273:13xxx   customer route (Asia)
+      1273:14xxx   customer route (Australia)
+      1273:15xxx   customer route (South America)
+    1273:16xxx   customer route (Africa)        -> Unconfirmed
+    1273:17xxx   customer route (Middle East)   -> Unconfirmed
+    1273:18xxx   customer route (India)         -> Unconfirmed
+      1273:21xxx   peer route (North America)
+      1273:22xxx   peer route (Europe)
+      1273:23xxx   peer route (Asia)
+      1273:24xxx   peer route (Australia)
+      1273:25xxx   peer route (South America)
+    1273:26xxx   peer route (Africa)            -> Unconfirmed
+    1273:27xxx   peer route (Middle East)       -> Unconfirmed
+    1273:28xxx   peer route (India)             -> Unconfirmed
+      1273:31xxx   upstream route (North America)
+      1273:32xxx   upstream route (Europe)
+      1273:33xxx   upstream route (Asia)
+      1273:34xxx   upstream route (Australia)
+      1273:35xxx   upstream route (South America)
+    1273:36xxx   upstream route (Africa)        -> Unconfirmed
+    1273:37xxx   upstream route (Middle East)   -> Unconfirmed
+    1273:38xxx   upstream route (India)         -> Unconfirmed
 
 1273:3997x - Upstream Telia (AS1299)
 
@@ -81,28 +81,26 @@ Community numbering uses the following structure:
 
 
 https://www.gin.ntt.net/support-center/policies-procedures/routing/
-
-2914:410 	NTT DATA and customer routes
-2914:420 	Peer routes
-
+Confirmed with NTT:
+2914:410   NTT DATA and customer routes
+2914:420   Peer routes
 world regional origins (2914:3—)
-2914:3000 	North America
-2914:3075 	North America regional customer
-2914:3200 	Europe
-2914:3275 	Europe regional customer
-2914:3400 	Asia
-2914:3475 	Asia regional customer
-2914:3600 	South America
-2914:3675 	South America regional customer
+2914:3000   North America
+2914:3075   North America regional customer
+2914:3200   Europe
+2914:3275   Europe regional customer
+2914:3400   Asia
+2914:3475   Asia regional customer
+2914:3600   South America
+2914:3675   South America regional customer
 
 
 https://www.gtt.net/services/managed-networking/internet/ip-transit/bgp-communities/
-
-3257:4000 	tags a GTT customer route. 
-3257:50001 	route originated in Europe
-3257:50002 	route originated in the US and Canada
-3257:50003 	route originated in Asia
-3257:30000-39999 	Auto-incremental number of private interconnects 
+3257:4000   tags a GTT customer route. 
+3257:30000-39999   Auto-incremental number of private interconnects 
+3257:50001   route originated in Europe
+3257:50002   route originated in the US and Canada
+3257:50003   route originated in Asia
 
 
 https://wholesale.telekom.com/fileadmin/user_upload/documents/global/downloads/BGP_Signaling_for_AS3320.pdf
@@ -209,6 +207,7 @@ remarks:        5511:710 Western Europe Peer & contents (Deprecated)
 
 
 https://www.scribd.com/document/399871041/TATA-AS6453-BGP-Communities
+https://bgp.tools/communities/6453
 
 6453:1000 North America
 6453:2000 Europe
@@ -221,48 +220,48 @@ https://www.scribd.com/document/399871041/TATA-AS6453-BGP-Communities
 
 
 
-No verification of these - wait on email response
+No verification of these - waiting on email response
 6461:1114   ??? Possible EU Peer identifier
 6461:2101   Customer in USA
 6461:2601   Peer in USA
-6461:5994	Prefixes learned via a peering session in APAC		
-6461:5995	Prefixes learned across a public peering exchange		
-6461:5996	Prefixes learned via a peering session in the EU		
-6461:5997	learned from a peer		
-6461:5998	learned from a customer		
-6461:5999	learned from an internal resource	
+6461:5994  Prefixes learned via a peering session in APAC    
+6461:5995  Prefixes learned across a public peering exchange    
+6461:5996  Prefixes learned via a peering session in the EU    
+6461:5997  learned from a peer    
+6461:5998  learned from a customer    
+6461:5999  learned from an internal resource  
 
 
 
 
 https://www.tisparkle.com/BGP-Community-support-for-AS6762-Customers
-6762:30 	Route learnt in Europe
-6762:31 	Route learnt in North-America
-6762:32 	Route learnt in South-America
-6762:33 	Route learnt in Asia
-6762:34 	Route learnt in Africa
-6762:40 	Route learnt from a customer
+6762:30   Route learnt in Europe
+6762:31   Route learnt in North-America
+6762:32   Route learnt in South-America
+6762:33   Route learnt in Asia
+6762:34   Route learnt in Africa
+6762:40   Route learnt from a customer
 
 
 
 Unconfirmed - https://lg.aorta.net/app
 6830:13000  Customer prefix
-6830:16000 	Learned from public peers (via an IXP)
-6830:17000 	Learned from private peers
-6830,23001
+6830:16000   Learned from public peers (via an IXP)
+6830:17000   Learned from private peers
+6830:23001
 
 
 
-Unconfirmed
-6939:1000 	Customer Route
-6939:9001 	Learned in North America
-6939:9002 	Learned in EU
-6939:9003 	Learned in APAC
-6939:9004 	Learned in Africa
-6939:9005 	Learned in South America
-6939:9006 	Learned in Oceania
-6939:9007 	Learned in Middle East
 
+Confirmed with HE:
+6939:1000   Customer Route
+6939:9001   Learned in North America
+6939:9002   Learned in EU
+6939:9003   Learned in APAC
+6939:9004   Learned in Africa
+6939:9005   Learned in South America
+6939:9006   Learned in Oceania
+6939:9007   Learned in Middle East
 6939:1000       Hurricane Customer
 6939:7XXX      Router      Router ID  
 6939:8XXX      Country      ISO 3166 Country Code https://en.wikipedia.org/wiki/ISO_3166-1#Current_codes  
@@ -271,17 +270,19 @@ Unconfirmed
 
 
 Unconfirmed
-7018:2000 	Learned from Customer
-7018:5000 	Learned from Peer
+7018:2000   Learned from Customer
+7018:5000   Learned from Peer
 
 
 
 
-Unconfirmed - https://telxius.com/en/looking-glass-service/
-12956:321 Learned from peer?
-12956:322 Learned from customer?
-   	12956:4001 	Learned in Europe
-  	12956:4002 	Learned in South/Central America
-  	12956:4003 	Learned in North America
-  	12956:4004 	Learned in Asia
-  	12956:4005 	Learned in Africa
+https://telxius.com/en/looking-glass-service/
+These were confirmed via email with Telxius:
+12956:123 Learned from customer
+12956:321 Learned from peer
+12956:322 Learned from paid peer
+12956:4001   Learned in Europe
+12956:4002   Learned in South/Central America
+12956:4003   Learned in North America
+12956:4004   Learned in Asia
+12956:4005   Learned in Africa

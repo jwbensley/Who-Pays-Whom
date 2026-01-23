@@ -1,25 +1,9 @@
 pub mod community_mappings {
+    use crate::comm_data::insert_comm_mapping;
     use crate::mrt_communities::standard_communities::StandardCommunity;
+    use crate::peer_data::peer_data::{PeerLocation, PeerType};
     use bgpkit_parser::models::Asn;
     use std::collections::HashMap;
-
-    #[derive(Clone, Debug, Eq, Hash, PartialEq)]
-    pub enum PeerType {
-        Customer,
-        Peer,
-        Upstream,
-        NoneFound,
-    }
-
-    #[derive(Clone, Debug, Eq, Hash, PartialEq)]
-    pub enum PeerLocation {
-        Africa,
-        AsiaPac,
-        Europe,
-        NorthAmerica,
-        SouthAmerica,
-        NoneFound,
-    }
 
     pub struct CommMappings {
         peer_type: HashMap<StandardCommunity, PeerType>,
@@ -36,6 +20,18 @@ pub mod community_mappings {
                 peer_type,
                 peer_location,
             }
+        }
+
+        pub fn add_peer_location(
+            &mut self,
+            community: StandardCommunity,
+            peer_location: PeerLocation,
+        ) {
+            self.peer_location.insert(community, peer_location);
+        }
+
+        pub fn add_peer_type(&mut self, community: StandardCommunity, peer_type: PeerType) {
+            self.peer_type.insert(community, peer_type);
         }
 
         pub fn get_peer_type(&self, community: &StandardCommunity) -> Option<&PeerType> {
@@ -55,124 +51,7 @@ pub mod community_mappings {
     impl Default for AsnMappings {
         fn default() -> Self {
             let mut asn_mappings = HashMap::<Asn, CommMappings>::new();
-
-            asn_mappings.insert(
-                Asn::new_32bit(174),
-                CommMappings::new(
-                    HashMap::from([
-                        (StandardCommunity::new(174, 21000), PeerType::Peer),
-                        (StandardCommunity::new(174, 21001), PeerType::Customer),
-                        (StandardCommunity::new(174, 21100), PeerType::Peer),
-                        (StandardCommunity::new(174, 21101), PeerType::Customer),
-                        (StandardCommunity::new(174, 21200), PeerType::Peer),
-                        (StandardCommunity::new(174, 21201), PeerType::Customer),
-                        (StandardCommunity::new(174, 21300), PeerType::Peer),
-                        (StandardCommunity::new(174, 21301), PeerType::Customer),
-                        (StandardCommunity::new(174, 21400), PeerType::Peer),
-                        (StandardCommunity::new(174, 21401), PeerType::Customer),
-                        (StandardCommunity::new(174, 21500), PeerType::Peer),
-                        (StandardCommunity::new(174, 21501), PeerType::Customer),
-                    ]),
-                    HashMap::from([
-                        (
-                            StandardCommunity::new(174, 21000),
-                            PeerLocation::NorthAmerica,
-                        ),
-                        (
-                            StandardCommunity::new(174, 21001),
-                            PeerLocation::NorthAmerica,
-                        ),
-                        (StandardCommunity::new(174, 21100), PeerLocation::Europe),
-                        (StandardCommunity::new(174, 21101), PeerLocation::Europe),
-                        (StandardCommunity::new(174, 21200), PeerLocation::AsiaPac),
-                        (StandardCommunity::new(174, 21201), PeerLocation::AsiaPac),
-                        (
-                            StandardCommunity::new(174, 21300),
-                            PeerLocation::SouthAmerica,
-                        ),
-                        (
-                            StandardCommunity::new(174, 21301),
-                            PeerLocation::SouthAmerica,
-                        ),
-                        (StandardCommunity::new(174, 21400), PeerLocation::AsiaPac),
-                        (StandardCommunity::new(174, 21401), PeerLocation::AsiaPac),
-                        (StandardCommunity::new(174, 21500), PeerLocation::Africa),
-                        (StandardCommunity::new(174, 21501), PeerLocation::Africa),
-                    ]),
-                ),
-            );
-
-            asn_mappings.insert(
-                Asn::new_32bit(701),
-                CommMappings::new(
-                    HashMap::from([
-                        (StandardCommunity::new(0, 201), PeerType::Customer),
-                        (StandardCommunity::new(0, 203), PeerType::Peer),
-                    ]),
-                    HashMap::new(),
-                ),
-            );
-
-            asn_mappings.insert(
-                Asn::new_32bit(1299),
-                CommMappings::new(
-                    HashMap::from([
-                        (StandardCommunity::new(1299, 20000), PeerType::Peer),
-                        (StandardCommunity::new(1299, 25000), PeerType::Peer),
-                        (StandardCommunity::new(1299, 27000), PeerType::Peer),
-                        (StandardCommunity::new(1299, 30000), PeerType::Customer),
-                        (StandardCommunity::new(1299, 35000), PeerType::Customer),
-                        (StandardCommunity::new(1299, 37000), PeerType::Customer),
-                    ]),
-                    HashMap::from([
-                        (StandardCommunity::new(1299, 20000), PeerLocation::Europe),
-                        (
-                            StandardCommunity::new(1299, 25000),
-                            PeerLocation::NorthAmerica,
-                        ),
-                        (StandardCommunity::new(1299, 27000), PeerLocation::AsiaPac),
-                        (StandardCommunity::new(1299, 30000), PeerLocation::Europe),
-                        (
-                            StandardCommunity::new(1299, 35000),
-                            PeerLocation::NorthAmerica,
-                        ),
-                        (StandardCommunity::new(1299, 37000), PeerLocation::AsiaPac),
-                    ]),
-                ),
-            );
-
-            asn_mappings.insert(
-                Asn::new_32bit(2914),
-                CommMappings::new(
-                    HashMap::from([
-                        (StandardCommunity::new(2914, 410), PeerType::Customer),
-                        (StandardCommunity::new(2914, 420), PeerType::Peer),
-                    ]),
-                    HashMap::from([
-                        (
-                            StandardCommunity::new(2914, 3000),
-                            PeerLocation::NorthAmerica,
-                        ),
-                        (
-                            StandardCommunity::new(2914, 3075),
-                            PeerLocation::NorthAmerica,
-                        ),
-                        (StandardCommunity::new(2914, 3200), PeerLocation::Europe),
-                        (StandardCommunity::new(2914, 3275), PeerLocation::Europe),
-                        (StandardCommunity::new(2914, 3400), PeerLocation::AsiaPac),
-                        (StandardCommunity::new(2914, 3475), PeerLocation::AsiaPac),
-                        (
-                            StandardCommunity::new(2914, 3600),
-                            PeerLocation::SouthAmerica,
-                        ),
-                        (
-                            StandardCommunity::new(2914, 3675),
-                            PeerLocation::SouthAmerica,
-                        ),
-                    ]),
-                ),
-            );
-
+            insert_comm_mapping(&mut asn_mappings);
             Self::new(asn_mappings)
         }
     }

@@ -1,7 +1,7 @@
 pub mod route {
-    use crate::comm_mappings::community_mappings::{PeerLocation, PeerType};
     use crate::mrt_communities::standard_communities::StandardCommunities;
     use crate::mrt_large_communities::large_communities::LargeCommunities;
+    use crate::peer_data::peer_data::{PeerLocation, PeerType};
     use bgpkit_parser::models::{Asn, Peer};
     use ipnet::IpNet;
     use std::hash::Hash;

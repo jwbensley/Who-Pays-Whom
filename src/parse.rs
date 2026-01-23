@@ -1,9 +1,10 @@
 pub mod rib_parser {
-    use crate::comm_mappings::community_mappings::{AsnMappings, PeerLocation, PeerType};
+    use crate::comm_mappings::community_mappings::AsnMappings;
     use crate::mrt_asn::asn::Tier1Asn;
     use crate::mrt_communities::standard_communities::StandardCommunities;
     use crate::mrt_large_communities::large_communities::LargeCommunities;
     use crate::mrt_route::route::{IpVersion, Route};
+    use crate::peer_data::peer_data::{PeerLocation, PeerType};
     use crate::peerings::global_peerings::GlobalPeerings;
     use crate::ribs::rib_getter::RibFile;
     use bgpkit_parser::models::{
@@ -13,14 +14,14 @@ pub mod rib_parser {
     use bgpkit_parser::{BgpkitParser, MrtRecord};
     use ipnet::IpNet;
     use log::{debug, info};
-    use rayon::ThreadPoolBuilder;
     use rayon::iter::{IntoParallelIterator, ParallelIterator};
+    use rayon::prelude::*;
     use std::collections::HashMap;
     use std::net::IpAddr;
     use std::sync::{Arc, RwLock};
 
     /// Parse a list of RIB files in parallel
-    pub fn find_peer_data(rib_files: &Vec<RibFile>, threads: &u32) {
+    pub fn parse_rib_files(rib_files: &Vec<RibFile>) {
         info!("Going to parse {} RIB files", rib_files.len());
         debug!(
             "{:?}",
@@ -32,11 +33,6 @@ pub mod rib_parser {
 
         let asn_mappings = AsnMappings::default();
         let global_peerings = Arc::new(RwLock::new(GlobalPeerings::default()));
-
-        ThreadPoolBuilder::new()
-            .num_threads((*threads).try_into().unwrap())
-            .build_global()
-            .unwrap();
 
         rib_files.into_par_iter().for_each(|rib_file| {
             parse_rib_file(
@@ -55,19 +51,14 @@ pub mod rib_parser {
         info!("Parsing {}", fp);
 
         let mut count: u32 = 0;
-        let mut id_peer_map = HashMap::<u16, Peer>::new();
+        let id_peer_map = get_peer_id_map(fp);
+        count += 1;
+        debug!("Peer Map for {}: {:#?}\n", fp, id_peer_map);
 
         let parser =
             BgpkitParser::new(fp.as_str()).unwrap_or_else(|_| panic!("Unable to parse {}", fp));
 
-        for mrt_entry in parser.into_record_iter() {
-            if count == 0 {
-                id_peer_map = get_peer_id_map(fp);
-                debug!("Peer Map for {}: {:#?}\n", fp, id_peer_map);
-                count += 1;
-                continue;
-            }
-
+        for mrt_entry in parser.into_record_iter().skip(1) {
             parse_mrt_entry(
                 &mrt_entry,
                 &global_peerings,
@@ -82,6 +73,40 @@ pub mod rib_parser {
 
         info!("Parsed {} records in {}.", count, fp,);
 
+        info! {"{:#?}", global_peerings.read().unwrap()};
+    }
+
+    pub fn parse_rib_file_threaded(fp: &String) {
+        info!("Parsing {}", fp);
+
+        let asn_mappings = AsnMappings::default();
+        let global_peerings = Arc::new(RwLock::new(GlobalPeerings::default()));
+        let id_peer_map = get_peer_id_map(fp);
+        debug!("Peer Map for {}: {:#?}\n", fp, id_peer_map);
+
+        let parser =
+            BgpkitParser::new(fp.as_str()).unwrap_or_else(|_| panic!("Unable to parse {}", fp));
+        let count: u32 = parser.into_raw_record_iter().count().try_into().unwrap();
+
+        let parser =
+            BgpkitParser::new(fp.as_str()).unwrap_or_else(|_| panic!("Unable to parse {}", fp));
+
+        parser
+            .into_record_iter()
+            .skip(1)
+            .par_bridge()
+            .for_each(|mrt_entry| {
+                parse_mrt_entry(
+                    &mrt_entry,
+                    &global_peerings,
+                    &id_peer_map,
+                    &asn_mappings,
+                    fp,
+                    &count,
+                )
+            });
+
+        info!("Parsed {} records in {}.", count, fp,);
         info! {"{:#?}", global_peerings.read().unwrap()};
     }
 

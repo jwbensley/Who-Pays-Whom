@@ -14,10 +14,18 @@ pub mod cli_args {
         pub ribs_ymd: String,
     }
 
-    /// Parse RIB files which aready exist locally.
+    /// Parse a RIB file which already exists locally - split across multiple thread.
     #[derive(Debug, Args)]
     pub struct FileArgs {
-        /// Space seperated list of existing MRT files to parse
+        /// Path to an existing MRT file to parse
+        #[arg(short = 'f', long)]
+        pub rib_file: String,
+    }
+
+    /// Parse RIB files which already exist locally - each file by a different thread.
+    #[derive(Debug, Args)]
+    pub struct FilesArgs {
+        /// Space separated list of existing MRT files to parse
         #[arg(short = 'f', long, value_delimiter = ' ', num_args = 1..)]
         pub rib_files: Vec<String>,
     }
@@ -26,6 +34,7 @@ pub mod cli_args {
     pub enum RibsSource {
         Download(DownloadArgs),
         File(FileArgs),
+        Files(FilesArgs),
     }
 
     /// Scan MRT RIB dumps, looking for tier 1 ASNs and communities
@@ -61,8 +70,16 @@ pub mod cli_args {
             }
         }
 
-        pub fn get_rib_files(&self) -> &Vec<String> {
+        pub fn get_rib_file(&self) -> &String {
             if let RibsSource::File(args) = &self.ribs_source {
+                &args.rib_file
+            } else {
+                panic!("No RIB file option to unpack");
+            }
+        }
+
+        pub fn get_rib_files(&self) -> &Vec<String> {
+            if let RibsSource::Files(args) = &self.ribs_source {
                 &args.rib_files
             } else {
                 panic!("No RIB file list option to unpack");
