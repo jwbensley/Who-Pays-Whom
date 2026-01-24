@@ -3,6 +3,7 @@ pub mod peer_data {
     pub enum PeerType {
         Customer,
         Peer,
+        PaidPeer,
         Upstream,
         NoneFound,
     }

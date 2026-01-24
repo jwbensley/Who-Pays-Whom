@@ -104,7 +104,6 @@ https://www.gtt.net/services/managed-networking/internet/ip-transit/bgp-communit
 
 
 https://wholesale.telekom.com/fileadmin/user_upload/documents/global/downloads/BGP_Signaling_for_AS3320.pdf
-
 3320:2010 Imported in Europe tag.origin.region.eu
 3320:2020 Imported in North America tag.origin.region.na
 3320:2030 Imported in Pacific Rim tag.origin.region.pacrim
@@ -150,7 +149,43 @@ https://wholesale.orange.com/portail/resources/other/Orange_BGP_Best_Practices_f
 $ whois -h whois.ripe.net AS5511
 
 5511:666 - Peer route
+remarks:        5511:680 Oceania Peer & contents (Deprecated)
+remarks:        5511:700 Northern America (East) Peer & contents (Deprecated)
+remarks:        5511:700 Caribbean Peer & contents (Deprecated)
+remarks:        5511:700 Northern America (West) Peer & contents (Deprecated)
+remarks:        5511:700 Southern America Peer & contents (Deprecated)
+remarks:        5511:710 Northern Europe Peer & contents (Deprecated)
+remarks:        5511:710 Eastern Europe Peer & contents (Deprecated)
+remarks:        5511:710 Southern Europe Peer & contents (Deprecated)
+remarks:        5511:710 Western Europe Peer & contents (Deprecated)
+remarks:        5511:720 Eastern Asia Peer & contents (Deprecated)
+remarks:        5511:720 South-eastern Asia Peer & contents (Deprecated)
+remarks:        5511:720 Western Asia Peer & contents (Deprecated)
+remarks:        5511:730 Eastern Africa Peer & contents (Deprecated)
+remarks:        5511:730 Middle Africa Peer & contents (Deprecated)
+remarks:        5511:730 Northern Africa Peer & contents (Deprecated)
+remarks:        5511:730 Southern Africa Peer & contents (Deprecated)
+remarks:        5511:730 Western Africa Peer & contents (Deprecated)
+
 5511:999 - Customer route
+remarks:        5511:500 Southern Europe Customers (Deprecated)
+remarks:        5511:500 Northern Europe Customers (Deprecated)
+remarks:        5511:500 Eastern Europe Customers (Deprecated)
+remarks:        5511:500 Western Europe Customers (Deprecated)
+remarks:        5511:540 Northern America (West) Customers (Deprecated)
+remarks:        5511:540 Northern America (East) Customers (Deprecated)
+remarks:        5511:590 Southern America Customers (Deprecated)
+remarks:        5511:560 Caribbean Customers (Deprecated)
+remarks:        5511:600 South-eastern Asia Customers (Deprecated)
+remarks:        5511:600 Eastern Asia Customers (Deprecated)
+remarks:        5511:640 Middle Africa Customers (Deprecated)
+remarks:        5511:640 Southern Africa Customers (Deprecated)
+remarks:        5511:640 Western Africa Customers (Deprecated)
+remarks:        5511:640 Eastern Africa Customers (Deprecated)
+remarks:        5511:640 Northern Africa Customers (Deprecated)
+remarks:        5511:650 Western Asia Customers (Deprecated)
+remarks:        5511:680 Oceania Customers (Deprecated)
+
 remarks:        5511:30100 Caribbean
 remarks:        5511:560 Caribbean Customers (Deprecated)
 remarks:        5511:700 Caribbean Peer & contents (Deprecated)
@@ -248,7 +283,7 @@ Unconfirmed - https://lg.aorta.net/app
 6830:13000  Customer prefix
 6830:16000   Learned from public peers (via an IXP)
 6830:17000   Learned from private peers
-6830:23001
+6830:23001  ????
 
 
 
@@ -262,7 +297,6 @@ Confirmed with HE:
 6939:9005   Learned in South America
 6939:9006   Learned in Oceania
 6939:9007   Learned in Middle East
-6939:1000       Hurricane Customer
 6939:7XXX      Router      Router ID  
 6939:8XXX      Country      ISO 3166 Country Code https://en.wikipedia.org/wiki/ISO_3166-1#Current_codes  
 6939:9XXX      Region      Region ID (1=North America, 2=EU, 3=APAC, 4=Africa, 5=South America, 6=Oceania, 7=Middle East)

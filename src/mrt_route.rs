@@ -1,7 +1,6 @@
 pub mod route {
     use crate::mrt_communities::standard_communities::StandardCommunities;
-    use crate::mrt_large_communities::large_communities::LargeCommunities;
-    use crate::peer_data::peer_data::{PeerLocation, PeerType};
+    use crate::peer_attrs::peer_data::{PeerLocation, PeerType};
     use bgpkit_parser::models::{Asn, Peer};
     use ipnet::IpNet;
     use std::hash::Hash;
@@ -27,30 +26,7 @@ pub mod route {
         prefix: IpNet,
         ip_version: IpVersion,
         communities: StandardCommunities,
-        large_communities: LargeCommunities,
     }
-
-    // impl PartialEq for Route {
-    //     fn eq(&self, other: &Self) -> bool {
-    //         (self.as_path == other.as_path)
-    //             // && (self.filename == other.filename)
-    //             && (self.next_hop == other.next_hop)
-    //             && (self.peer == other.peer)
-    //             && (self.prefix == other.prefix)
-    //             && (self.communities == other.communities)
-    //             && (self.large_communities == other.large_communities)
-    //     }
-    // }
-
-    // impl Hash for Route {
-    //     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-    //         self.as_path.hash(state);
-    //         // self.filename.hash(state);
-    //         self.next_hop.hash(state);
-    //         self.peer.hash(state);
-    //         self.prefix.hash(state);
-    //     }
-    // }
 
     impl Route {
         pub fn new(
@@ -63,10 +39,14 @@ pub mod route {
             next_hop: IpAddr,
             peer: Peer,
             prefix: IpNet,
-            ip_version: IpVersion,
             communities: StandardCommunities,
-            large_communities: LargeCommunities,
         ) -> Self {
+            let ip_version = if prefix.to_string().contains(".") {
+                IpVersion::Ipv4
+            } else {
+                IpVersion::Ipv6
+            };
+
             Self {
                 local_as,
                 peer_as,
@@ -76,10 +56,9 @@ pub mod route {
                 filename,
                 next_hop,
                 peer,
-                prefix,
                 ip_version,
+                prefix,
                 communities,
-                large_communities,
             }
         }
 
@@ -102,13 +81,5 @@ pub mod route {
         pub fn get_peer_type(&self) -> &PeerType {
             &self.peer_type
         }
-
-        // pub fn get_communities(&self) -> &Vec<Community> {
-        //     &self.communities
-        // }
-
-        // pub fn get_large_communities(&self) -> &Vec<LargeCommunity> {
-        //     &self.large_communities
-        // }
     }
 }
