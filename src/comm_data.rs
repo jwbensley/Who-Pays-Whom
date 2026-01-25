@@ -1,13 +1,13 @@
 use crate::comm_mappings::community_mappings::CommMappings;
+use crate::mrt_asn::asn::MrtAsn;
 use crate::mrt_communities::standard_communities::StandardCommunity;
 use crate::peer_attrs::peer_data::{PeerLocation, PeerType};
-use bgpkit_parser::models::Asn;
 use std::collections::HashMap;
 
-pub fn insert_comm_mapping(asn_mappings: &mut HashMap<Asn, CommMappings>) {
+pub fn insert_comm_mapping(asn_mappings: &mut HashMap<MrtAsn, CommMappings>) {
     /* Cogent */
     asn_mappings.insert(
-        Asn::new_32bit(174),
+        MrtAsn::from_u32(174),
         CommMappings::new(
             HashMap::from([
                 (StandardCommunity::new(174, 21000), PeerType::Peer),
@@ -32,14 +32,8 @@ pub fn insert_comm_mapping(asn_mappings: &mut HashMap<Asn, CommMappings>) {
                     StandardCommunity::new(174, 21001),
                     PeerLocation::NorthAmerica,
                 ),
-                (
-                    StandardCommunity::new(174, 21100),
-                    PeerLocation::EuropeMiddleEast,
-                ),
-                (
-                    StandardCommunity::new(174, 21101),
-                    PeerLocation::EuropeMiddleEast,
-                ),
+                (StandardCommunity::new(174, 21100), PeerLocation::Europe),
+                (StandardCommunity::new(174, 21101), PeerLocation::Europe),
                 (StandardCommunity::new(174, 21200), PeerLocation::AsiaPac),
                 (StandardCommunity::new(174, 21201), PeerLocation::AsiaPac),
                 (
@@ -60,7 +54,7 @@ pub fn insert_comm_mapping(asn_mappings: &mut HashMap<Asn, CommMappings>) {
 
     /* Verizon */
     asn_mappings.insert(
-        Asn::new_32bit(701),
+        MrtAsn::from_u32(701),
         CommMappings::new(
             HashMap::from([
                 (StandardCommunity::new(0, 201), PeerType::Customer),
@@ -106,22 +100,13 @@ pub fn insert_comm_mapping(asn_mappings: &mut HashMap<Asn, CommMappings>) {
 
     // Learned in Europe
     for i in 12000..=12999 {
-        cm.add_peer_location(
-            StandardCommunity::new(1273, i),
-            PeerLocation::EuropeMiddleEast,
-        );
+        cm.add_peer_location(StandardCommunity::new(1273, i), PeerLocation::Europe);
     }
     for i in 22000..=22999 {
-        cm.add_peer_location(
-            StandardCommunity::new(1273, i),
-            PeerLocation::EuropeMiddleEast,
-        );
+        cm.add_peer_location(StandardCommunity::new(1273, i), PeerLocation::Europe);
     }
     for i in 32000..=32999 {
-        cm.add_peer_location(
-            StandardCommunity::new(1273, i),
-            PeerLocation::EuropeMiddleEast,
-        );
+        cm.add_peer_location(StandardCommunity::new(1273, i), PeerLocation::Europe);
     }
 
     // Learned in Asia
@@ -170,22 +155,13 @@ pub fn insert_comm_mapping(asn_mappings: &mut HashMap<Asn, CommMappings>) {
 
     // Learned in Middle East
     for i in 17000..=17999 {
-        cm.add_peer_location(
-            StandardCommunity::new(1273, i),
-            PeerLocation::EuropeMiddleEast,
-        );
+        cm.add_peer_location(StandardCommunity::new(1273, i), PeerLocation::Europe);
     }
     for i in 27000..=27999 {
-        cm.add_peer_location(
-            StandardCommunity::new(1273, i),
-            PeerLocation::EuropeMiddleEast,
-        );
+        cm.add_peer_location(StandardCommunity::new(1273, i), PeerLocation::Europe);
     }
     for i in 37000..=37999 {
-        cm.add_peer_location(
-            StandardCommunity::new(1273, i),
-            PeerLocation::EuropeMiddleEast,
-        );
+        cm.add_peer_location(StandardCommunity::new(1273, i), PeerLocation::Europe);
     }
 
     // Learned in India
@@ -199,11 +175,11 @@ pub fn insert_comm_mapping(asn_mappings: &mut HashMap<Asn, CommMappings>) {
         cm.add_peer_location(StandardCommunity::new(1273, i), PeerLocation::AsiaPac);
     }
 
-    asn_mappings.insert(Asn::new_32bit(1273), cm);
+    asn_mappings.insert(MrtAsn::from_u32(1273), cm);
 
     /* Arelion */
     asn_mappings.insert(
-        Asn::new_32bit(1299),
+        MrtAsn::from_u32(1299),
         CommMappings::new(
             HashMap::from([
                 (StandardCommunity::new(1299, 20000), PeerType::Peer),
@@ -214,19 +190,13 @@ pub fn insert_comm_mapping(asn_mappings: &mut HashMap<Asn, CommMappings>) {
                 (StandardCommunity::new(1299, 37000), PeerType::Customer),
             ]),
             HashMap::from([
-                (
-                    StandardCommunity::new(1299, 20000),
-                    PeerLocation::EuropeMiddleEast,
-                ),
+                (StandardCommunity::new(1299, 20000), PeerLocation::Europe),
                 (
                     StandardCommunity::new(1299, 25000),
                     PeerLocation::NorthAmerica,
                 ),
                 (StandardCommunity::new(1299, 27000), PeerLocation::AsiaPac),
-                (
-                    StandardCommunity::new(1299, 30000),
-                    PeerLocation::EuropeMiddleEast,
-                ),
+                (StandardCommunity::new(1299, 30000), PeerLocation::Europe),
                 (
                     StandardCommunity::new(1299, 35000),
                     PeerLocation::NorthAmerica,
@@ -238,7 +208,7 @@ pub fn insert_comm_mapping(asn_mappings: &mut HashMap<Asn, CommMappings>) {
 
     /* NTT */
     asn_mappings.insert(
-        Asn::new_32bit(2914),
+        MrtAsn::from_u32(2914),
         CommMappings::new(
             HashMap::from([
                 (StandardCommunity::new(2914, 410), PeerType::Customer),
@@ -253,14 +223,8 @@ pub fn insert_comm_mapping(asn_mappings: &mut HashMap<Asn, CommMappings>) {
                     StandardCommunity::new(2914, 3075),
                     PeerLocation::NorthAmerica,
                 ),
-                (
-                    StandardCommunity::new(2914, 3200),
-                    PeerLocation::EuropeMiddleEast,
-                ),
-                (
-                    StandardCommunity::new(2914, 3275),
-                    PeerLocation::EuropeMiddleEast,
-                ),
+                (StandardCommunity::new(2914, 3200), PeerLocation::Europe),
+                (StandardCommunity::new(2914, 3275), PeerLocation::Europe),
                 (StandardCommunity::new(2914, 3400), PeerLocation::AsiaPac),
                 (StandardCommunity::new(2914, 3475), PeerLocation::AsiaPac),
                 (
@@ -279,10 +243,7 @@ pub fn insert_comm_mapping(asn_mappings: &mut HashMap<Asn, CommMappings>) {
     let mut cm = CommMappings::new(
         HashMap::from([(StandardCommunity::new(3257, 4000), PeerType::Customer)]),
         HashMap::from([
-            (
-                StandardCommunity::new(3257, 50001),
-                PeerLocation::EuropeMiddleEast,
-            ),
+            (StandardCommunity::new(3257, 50001), PeerLocation::Europe),
             (
                 StandardCommunity::new(3257, 50002),
                 PeerLocation::NorthAmerica,
@@ -295,21 +256,18 @@ pub fn insert_comm_mapping(asn_mappings: &mut HashMap<Asn, CommMappings>) {
     for i in 30000..=39999 {
         cm.add_peer_type(StandardCommunity::new(3257, i), PeerType::Peer);
     }
-    asn_mappings.insert(Asn::new_32bit(3257), cm);
+    asn_mappings.insert(MrtAsn::from_u32(3257), cm);
 
     /* DTAG */
     asn_mappings.insert(
-        Asn::new_32bit(3320),
+        MrtAsn::from_u32(3320),
         CommMappings::new(
             HashMap::from([
                 (StandardCommunity::new(3320, 9010), PeerType::Customer),
                 (StandardCommunity::new(3320, 9020), PeerType::Peer),
             ]),
             HashMap::from([
-                (
-                    StandardCommunity::new(3320, 2010),
-                    PeerLocation::EuropeMiddleEast,
-                ),
+                (StandardCommunity::new(3320, 2010), PeerLocation::Europe),
                 (
                     StandardCommunity::new(3320, 2020),
                     PeerLocation::NorthAmerica,
@@ -321,17 +279,14 @@ pub fn insert_comm_mapping(asn_mappings: &mut HashMap<Asn, CommMappings>) {
 
     /* Lumen */
     asn_mappings.insert(
-        Asn::new_32bit(3356),
+        MrtAsn::from_u32(3356),
         CommMappings::new(
             HashMap::from([
                 (StandardCommunity::new(3356, 123), PeerType::Customer),
                 (StandardCommunity::new(3356, 666), PeerType::Peer),
             ]),
             HashMap::from([
-                (
-                    StandardCommunity::new(3356, 2),
-                    PeerLocation::EuropeMiddleEast,
-                ),
+                (StandardCommunity::new(3356, 2), PeerLocation::Europe),
                 (StandardCommunity::new(3356, 3), PeerLocation::NorthAmerica),
                 (StandardCommunity::new(3356, 4), PeerLocation::AsiaPac),
                 (StandardCommunity::new(3356, 5), PeerLocation::SouthAmerica),
@@ -341,7 +296,7 @@ pub fn insert_comm_mapping(asn_mappings: &mut HashMap<Asn, CommMappings>) {
 
     /* PCCW */
     asn_mappings.insert(
-        Asn::new_32bit(3491),
+        MrtAsn::from_u32(3491),
         CommMappings::new(
             HashMap::from([
                 (StandardCommunity::new(3491, 100), PeerType::Customer),
@@ -368,10 +323,7 @@ pub fn insert_comm_mapping(asn_mappings: &mut HashMap<Asn, CommMappings>) {
                     StandardCommunity::new(3491, 200),
                     PeerLocation::NorthAmerica,
                 ),
-                (
-                    StandardCommunity::new(3491, 300),
-                    PeerLocation::EuropeMiddleEast,
-                ),
+                (StandardCommunity::new(3491, 300), PeerLocation::Europe),
                 (StandardCommunity::new(3491, 400), PeerLocation::AsiaPac),
                 (StandardCommunity::new(3491, 500), PeerLocation::Africa),
                 (StandardCommunity::new(3491, 700), PeerLocation::AsiaPac),
@@ -383,10 +335,7 @@ pub fn insert_comm_mapping(asn_mappings: &mut HashMap<Asn, CommMappings>) {
                     StandardCommunity::new(3491, 2000),
                     PeerLocation::NorthAmerica,
                 ),
-                (
-                    StandardCommunity::new(3491, 3000),
-                    PeerLocation::EuropeMiddleEast,
-                ),
+                (StandardCommunity::new(3491, 3000), PeerLocation::Europe),
                 (StandardCommunity::new(3491, 4000), PeerLocation::AsiaPac),
                 (StandardCommunity::new(3491, 5000), PeerLocation::Africa),
                 (StandardCommunity::new(3491, 7000), PeerLocation::AsiaPac),
@@ -396,7 +345,7 @@ pub fn insert_comm_mapping(asn_mappings: &mut HashMap<Asn, CommMappings>) {
 
     /* Orange */
     asn_mappings.insert(
-        Asn::new_32bit(5511),
+        MrtAsn::from_u32(5511),
         CommMappings::new(
             HashMap::from([
                 (StandardCommunity::new(5511, 666), PeerType::Peer),
@@ -434,18 +383,9 @@ pub fn insert_comm_mapping(asn_mappings: &mut HashMap<Asn, CommMappings>) {
                 (StandardCommunity::new(5511, 30121), PeerLocation::AsiaPac),
                 (StandardCommunity::new(5511, 600), PeerLocation::AsiaPac),
                 (StandardCommunity::new(5511, 720), PeerLocation::AsiaPac),
-                (
-                    StandardCommunity::new(5511, 30139),
-                    PeerLocation::EuropeMiddleEast,
-                ),
-                (
-                    StandardCommunity::new(5511, 500),
-                    PeerLocation::EuropeMiddleEast,
-                ),
-                (
-                    StandardCommunity::new(5511, 710),
-                    PeerLocation::EuropeMiddleEast,
-                ),
+                (StandardCommunity::new(5511, 30139), PeerLocation::Europe),
+                (StandardCommunity::new(5511, 500), PeerLocation::Europe),
+                (StandardCommunity::new(5511, 710), PeerLocation::Europe),
                 (StandardCommunity::new(5511, 30173), PeerLocation::Africa),
                 (StandardCommunity::new(5511, 30184), PeerLocation::Africa),
                 (
@@ -460,10 +400,7 @@ pub fn insert_comm_mapping(asn_mappings: &mut HashMap<Asn, CommMappings>) {
                     StandardCommunity::new(5511, 30218),
                     PeerLocation::NorthAmerica,
                 ),
-                (
-                    StandardCommunity::new(5511, 30228),
-                    PeerLocation::EuropeMiddleEast,
-                ),
+                (StandardCommunity::new(5511, 30228), PeerLocation::Europe),
                 (StandardCommunity::new(5511, 30237), PeerLocation::AsiaPac),
                 (StandardCommunity::new(5511, 680), PeerLocation::AsiaPac),
                 (StandardCommunity::new(5511, 30241), PeerLocation::AsiaPac),
@@ -476,24 +413,18 @@ pub fn insert_comm_mapping(asn_mappings: &mut HashMap<Asn, CommMappings>) {
                     StandardCommunity::new(5511, 590),
                     PeerLocation::SouthAmerica,
                 ),
-                (
-                    StandardCommunity::new(5511, 30257),
-                    PeerLocation::EuropeMiddleEast,
-                ),
+                (StandardCommunity::new(5511, 30257), PeerLocation::Europe),
                 (StandardCommunity::new(5511, 30343), PeerLocation::Africa),
                 (StandardCommunity::new(5511, 30416), PeerLocation::AsiaPac),
                 (StandardCommunity::new(5511, 650), PeerLocation::AsiaPac),
-                (
-                    StandardCommunity::new(5511, 30428),
-                    PeerLocation::EuropeMiddleEast,
-                ),
+                (StandardCommunity::new(5511, 30428), PeerLocation::Europe),
             ]),
         ),
     );
 
     /* TATA */
     asn_mappings.insert(
-        Asn::new_32bit(6453),
+        MrtAsn::from_u32(6453),
         CommMappings::new(
             HashMap::from([
                 (StandardCommunity::new(6453, 50), PeerType::Customer),
@@ -504,10 +435,7 @@ pub fn insert_comm_mapping(asn_mappings: &mut HashMap<Asn, CommMappings>) {
                     StandardCommunity::new(6453, 1000),
                     PeerLocation::NorthAmerica,
                 ),
-                (
-                    StandardCommunity::new(6453, 2000),
-                    PeerLocation::EuropeMiddleEast,
-                ),
+                (StandardCommunity::new(6453, 2000), PeerLocation::Europe),
                 (StandardCommunity::new(6453, 3000), PeerLocation::AsiaPac),
                 (StandardCommunity::new(6453, 4000), PeerLocation::Africa),
                 (StandardCommunity::new(6453, 6000), PeerLocation::AsiaPac),
@@ -517,7 +445,7 @@ pub fn insert_comm_mapping(asn_mappings: &mut HashMap<Asn, CommMappings>) {
 
     /* Zayo */
     asn_mappings.insert(
-        Asn::new_32bit(6461),
+        MrtAsn::from_u32(6461),
         CommMappings::new(
             HashMap::from([
                 (StandardCommunity::new(6461, 2101), PeerType::Customer),
@@ -538,24 +466,18 @@ pub fn insert_comm_mapping(asn_mappings: &mut HashMap<Asn, CommMappings>) {
                     PeerLocation::NorthAmerica,
                 ),
                 (StandardCommunity::new(6461, 5994), PeerLocation::AsiaPac),
-                (
-                    StandardCommunity::new(6461, 5996),
-                    PeerLocation::EuropeMiddleEast,
-                ),
+                (StandardCommunity::new(6461, 5996), PeerLocation::Europe),
             ]),
         ),
     );
 
     /* TISparkle */
     asn_mappings.insert(
-        Asn::new_32bit(6762),
+        MrtAsn::from_u32(6762),
         CommMappings::new(
             HashMap::from([(StandardCommunity::new(6762, 40), PeerType::Customer)]),
             HashMap::from([
-                (
-                    StandardCommunity::new(6762, 30),
-                    PeerLocation::EuropeMiddleEast,
-                ),
+                (StandardCommunity::new(6762, 30), PeerLocation::Europe),
                 (StandardCommunity::new(6762, 31), PeerLocation::NorthAmerica),
                 (StandardCommunity::new(6762, 32), PeerLocation::SouthAmerica),
                 (StandardCommunity::new(6762, 33), PeerLocation::AsiaPac),
@@ -566,7 +488,7 @@ pub fn insert_comm_mapping(asn_mappings: &mut HashMap<Asn, CommMappings>) {
 
     /* Libery Global */
     asn_mappings.insert(
-        Asn::new_32bit(6830),
+        MrtAsn::from_u32(6830),
         CommMappings::new(
             HashMap::from([
                 (StandardCommunity::new(6830, 13000), PeerType::Customer),
@@ -579,7 +501,7 @@ pub fn insert_comm_mapping(asn_mappings: &mut HashMap<Asn, CommMappings>) {
 
     /* Hurricane Electric */
     asn_mappings.insert(
-        Asn::new_32bit(6939),
+        MrtAsn::from_u32(6939),
         CommMappings::new(
             HashMap::from([
                 (StandardCommunity::new(6939, 1000), PeerType::Customer),
@@ -591,10 +513,7 @@ pub fn insert_comm_mapping(asn_mappings: &mut HashMap<Asn, CommMappings>) {
                     StandardCommunity::new(6939, 9001),
                     PeerLocation::NorthAmerica,
                 ),
-                (
-                    StandardCommunity::new(6939, 9002),
-                    PeerLocation::EuropeMiddleEast,
-                ),
+                (StandardCommunity::new(6939, 9002), PeerLocation::Europe),
                 (StandardCommunity::new(6939, 9003), PeerLocation::AsiaPac),
                 (StandardCommunity::new(6939, 9004), PeerLocation::Africa),
                 (
@@ -602,17 +521,14 @@ pub fn insert_comm_mapping(asn_mappings: &mut HashMap<Asn, CommMappings>) {
                     PeerLocation::SouthAmerica,
                 ),
                 (StandardCommunity::new(6939, 9006), PeerLocation::AsiaPac),
-                (
-                    StandardCommunity::new(6939, 9007),
-                    PeerLocation::EuropeMiddleEast,
-                ),
+                (StandardCommunity::new(6939, 9007), PeerLocation::MiddleEast),
             ]),
         ),
     );
 
     /* AT&T */
     asn_mappings.insert(
-        Asn::new_32bit(7018),
+        MrtAsn::from_u32(7018),
         CommMappings::new(
             HashMap::from([
                 (StandardCommunity::new(7018, 2000), PeerType::Customer),
@@ -624,7 +540,7 @@ pub fn insert_comm_mapping(asn_mappings: &mut HashMap<Asn, CommMappings>) {
 
     /* Telxius */
     asn_mappings.insert(
-        Asn::new_32bit(12956),
+        MrtAsn::from_u32(12956),
         CommMappings::new(
             HashMap::from([
                 (StandardCommunity::new(12956, 123), PeerType::Customer),
@@ -632,10 +548,7 @@ pub fn insert_comm_mapping(asn_mappings: &mut HashMap<Asn, CommMappings>) {
                 (StandardCommunity::new(12956, 322), PeerType::PaidPeer),
             ]),
             HashMap::from([
-                (
-                    StandardCommunity::new(12956, 4001),
-                    PeerLocation::EuropeMiddleEast,
-                ),
+                (StandardCommunity::new(12956, 4001), PeerLocation::Europe),
                 (
                     StandardCommunity::new(12956, 4002),
                     PeerLocation::SouthAmerica,

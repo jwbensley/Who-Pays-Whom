@@ -1,4 +1,4 @@
-pub mod threaded_parter {
+pub mod threaded_parser {
     use crate::comm_mappings::community_mappings::AsnMappings;
     use crate::parse_mrt::mrt_parser::{get_peer_id_map, parse_mrt_entry};
     use crate::peerings::global_peerings::GlobalPeerings;
@@ -42,14 +42,14 @@ pub mod threaded_parter {
     ) {
         info!("Parsing {}", fp);
 
-        let id_peer_map = get_peer_id_map(fp);
-        debug!("Peer Map for {}: {:#?}\n", fp, id_peer_map);
+        let peer_id_map = get_peer_id_map(fp);
+        debug!("Peer Map for {}: {:#?}\n", fp, peer_id_map);
 
         let parser =
             BgpkitParser::new(fp.as_str()).unwrap_or_else(|_| panic!("Unable to parse {}", fp));
 
         parser.into_record_iter().skip(1).for_each(|mrt_entry| {
-            parse_mrt_entry(&mrt_entry, &global_peerings, &id_peer_map, asn_mappings, fp)
+            parse_mrt_entry(&mrt_entry, &global_peerings, &peer_id_map, asn_mappings, fp)
         });
 
         info!("Parsed {}", fp,);
@@ -61,8 +61,8 @@ pub mod threaded_parter {
 
         let asn_mappings = AsnMappings::default();
         let global_peerings = Arc::new(RwLock::new(GlobalPeerings::default()));
-        let id_peer_map = get_peer_id_map(fp);
-        debug!("Peer Map for {}: {:#?}\n", fp, id_peer_map);
+        let peer_id_map = get_peer_id_map(fp);
+        debug!("Peer Map for {}: {:#?}\n", fp, peer_id_map);
 
         let parser =
             BgpkitParser::new(fp.as_str()).unwrap_or_else(|_| panic!("Unable to parse {}", fp));
@@ -75,7 +75,7 @@ pub mod threaded_parter {
                 parse_mrt_entry(
                     &mrt_entry,
                     &Arc::clone(&global_peerings),
-                    &id_peer_map,
+                    &peer_id_map,
                     &asn_mappings,
                     fp,
                 )

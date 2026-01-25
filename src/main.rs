@@ -5,7 +5,7 @@ pub mod http;
 pub mod logging;
 pub mod mrt_asn;
 pub mod mrt_communities;
-// pub mod mrt_large_communities;
+pub mod mrt_peer;
 pub mod mrt_route;
 pub mod parse_mrt;
 pub mod parse_threaded;
@@ -13,7 +13,7 @@ pub mod peer_attrs;
 pub mod peerings;
 pub mod ribs;
 
-use crate::parse_threaded::threaded_parter::{parse_rib_file_threaded, parse_rib_files};
+use crate::parse_threaded::threaded_parser::{parse_rib_file_threaded, parse_rib_files};
 use crate::ribs::rib_getter::download_ribs_for_day;
 use crate::{args::cli_args::RibsSource, ribs::rib_getter::RibFile};
 use rayon::ThreadPoolBuilder;

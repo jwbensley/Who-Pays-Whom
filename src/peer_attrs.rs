@@ -1,5 +1,7 @@
 pub mod peer_data {
-    #[derive(Clone, Debug, Eq, Hash, PartialEq)]
+    use serde::Serialize;
+
+    #[derive(Clone, Debug, Eq, Hash, PartialEq, Serialize)]
     pub enum PeerType {
         Customer,
         Peer,
@@ -8,11 +10,12 @@ pub mod peer_data {
         NoneFound,
     }
 
-    #[derive(Clone, Debug, Eq, Hash, PartialEq)]
+    #[derive(Clone, Debug, Eq, Hash, PartialEq, Serialize)]
     pub enum PeerLocation {
         Africa,
         AsiaPac,
-        EuropeMiddleEast,
+        Europe,
+        MiddleEast,
         NorthAmerica,
         SouthAmerica,
         NoneFound,

@@ -1,24 +1,24 @@
 pub mod mrt_parser {
     use crate::comm_mappings::community_mappings::AsnMappings;
-    use crate::mrt_asn::asn::Tier1Asn;
+    use crate::mrt_asn::asn::{IsT1Asn, MrtAsn};
     use crate::mrt_communities::standard_communities::StandardCommunities;
+    use crate::mrt_peer::peer::{Peer, PeerTable};
     use crate::mrt_route::route::Route;
     use crate::peer_attrs::peer_data::{PeerLocation, PeerType};
     use crate::peerings::global_peerings::GlobalPeerings;
     use bgpkit_parser::models::{
-        AsPathSegment, Asn, AttrFlags, AttrType, Attribute, AttributeValue, MrtMessage, Peer,
-        RibAfiEntries, RibEntry, TableDumpV2Message, TableDumpV2Type,
+        AsPathSegment, AttrFlags, AttrType, Attribute, AttributeValue, MrtMessage, RibAfiEntries,
+        RibEntry, TableDumpV2Message, TableDumpV2Type,
     };
     use bgpkit_parser::{BgpkitParser, MrtRecord};
     use ipnet::IpNet;
-    use std::collections::HashMap;
     use std::net::IpAddr;
     use std::sync::{Arc, RwLock};
 
     pub fn parse_mrt_entry(
         mrt_entry: &MrtRecord,
         global_peerings: &Arc<RwLock<GlobalPeerings>>,
-        id_peer_map: &HashMap<u16, Peer>,
+        peer_id_map: &PeerTable,
         asn_mappings: &AsnMappings,
         fp: &String,
     ) {
@@ -54,17 +54,18 @@ pub mod mrt_parser {
                     let pos_2 = pos_1 + 1;
                     let asn_2 = &as_sequence[pos_2];
                     if asn_2.is_t1() {
-                        check_peering(
+                        let route = build_route(
                             rib_entry,
                             fp,
                             asn_mappings,
                             asn_1,
                             asn_2,
                             &as_sequence,
-                            &id_peer_map[&rib_entry.peer_index],
+                            &peer_id_map.get_peer(&rib_entry.peer_index),
                             &prefix,
-                            global_peerings,
                         );
+
+                        add_peering(global_peerings, &route);
 
                         if pos_2 == as_sequence.len() - 1 {
                             // Last ASN in the path
@@ -74,17 +75,7 @@ pub mod mrt_parser {
                         let pos_3 = pos_2 + 1;
                         let asn_3 = &as_sequence[pos_3];
                         if asn_3.is_t1() {
-                            check_peering(
-                                rib_entry,
-                                fp,
-                                asn_mappings,
-                                asn_2,
-                                asn_3,
-                                &as_sequence,
-                                &id_peer_map[&rib_entry.peer_index],
-                                &prefix,
-                                global_peerings,
-                            );
+                            add_peering(global_peerings, &route);
                         }
                     }
                 }
@@ -93,7 +84,7 @@ pub mod mrt_parser {
     }
 
     /// Return the mapping of peer IDs to peer details
-    pub fn get_peer_id_map(fp: &String) -> HashMap<u16, Peer> {
+    pub fn get_peer_id_map(fp: &String) -> PeerTable {
         let parser = BgpkitParser::new(fp.as_str())
             .unwrap_or_else(|_| panic!("Unable to parse MRT file {}", fp));
 
@@ -102,7 +93,7 @@ pub mod mrt_parser {
         if let MrtMessage::TableDumpV2Message(TableDumpV2Message::PeerIndexTable(peer_table)) =
             &mrt_record.message
         {
-            peer_table.id_peer_map.clone()
+            PeerTable::from(&peer_table.id_peer_map)
         } else {
             panic!("Couldn't extract peer table from table dump in {}", fp);
         }
@@ -190,27 +181,11 @@ pub mod mrt_parser {
         }
     }
 
-    // fn get_large_communities(rib_entry: &RibEntry) -> LargeCommunities {
-    //     if let AttributeValue::LargeCommunities(large_communities) = rib_entry
-    //         .attributes
-    //         .get_attr(AttrType::LARGE_COMMUNITIES)
-    //         .unwrap_or(Attribute {
-    //             value: AttributeValue::LargeCommunities(Vec::new()),
-    //             flag: AttrFlags::OPTIONAL | AttrFlags::TRANSITIVE,
-    //         })
-    //         .value
-    //     {
-    //         LargeCommunities::new(large_communities)
-    //     } else {
-    //         LargeCommunities::default()
-    //     }
-    // }
-
     /// Split the segments of the AS Path into an AS Sequence and an AS Set.
     /// The likelihood of there being more than on AS Sequence (because the path)
     /// is longer than 255 ASNs is incredibly low. Also, because we're looking for
     /// T1 AS path, we're not interested in AS_SETs.
-    fn get_as_sequence(rib_entry: &RibEntry, fp: &String) -> Vec<Asn> {
+    fn get_as_sequence(rib_entry: &RibEntry, fp: &String) -> Vec<MrtAsn> {
         let as_path_segments = &rib_entry
             .attributes
             .as_path()
@@ -224,20 +199,23 @@ pub mod mrt_parser {
 
         for path_seg in as_path_segments {
             if let AsPathSegment::AsSequence(asns) = path_seg {
-                return asns.clone();
+                return asns
+                    .iter()
+                    .map(|a| MrtAsn::new(a.clone()))
+                    .collect::<Vec<MrtAsn>>();
             }
         }
 
-        Vec::<Asn>::new()
+        Vec::<MrtAsn>::new()
     }
 
     fn build_route(
         rib_entry: &RibEntry,
         fp: &String,
         asn_mappings: &AsnMappings,
-        local_asn: &Asn,
-        peer_asn: &Asn,
-        as_sequence: &Vec<Asn>,
+        local_asn: &MrtAsn,
+        peer_asn: &MrtAsn,
+        as_sequence: &Vec<MrtAsn>,
         peer: &Peer,
         prefix: &IpNet,
     ) -> Route {
@@ -247,8 +225,8 @@ pub mod mrt_parser {
         let peer_type = communities.get_peer_type(local_asn, asn_mappings);
 
         Route::new(
-            *local_asn,
-            *peer_asn,
+            local_asn.clone(),
+            peer_asn.clone(),
             peer_type.clone(),
             peer_location.clone(),
             as_sequence.clone(),
@@ -260,28 +238,7 @@ pub mod mrt_parser {
         )
     }
 
-    fn check_peering(
-        rib_entry: &RibEntry,
-        fp: &String,
-        asn_mappings: &AsnMappings,
-        local_asn: &Asn,
-        peer_asn: &Asn,
-        as_sequence: &Vec<Asn>,
-        peer: &Peer,
-        prefix: &IpNet,
-        global_peerings: &Arc<RwLock<GlobalPeerings>>,
-    ) {
-        let route = build_route(
-            rib_entry,
-            fp,
-            asn_mappings,
-            local_asn,
-            peer_asn,
-            as_sequence,
-            peer,
-            prefix,
-        );
-
+    fn add_peering(global_peerings: &Arc<RwLock<GlobalPeerings>>, route: &Route) {
         if *route.get_peer_type() != PeerType::NoneFound
             && *route.get_peer_location() != PeerLocation::NoneFound
         {
@@ -292,7 +249,7 @@ pub mod mrt_parser {
             }
             if !has_peering {
                 let mut gb_lock = global_peerings.write().unwrap();
-                gb_lock.add_peering(route);
+                gb_lock.add_peering(route.clone());
             }
         }
     }

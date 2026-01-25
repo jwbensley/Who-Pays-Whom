@@ -2,9 +2,11 @@ pub mod community_mappings {
     use crate::comm_data::insert_comm_mapping;
     use crate::mrt_communities::standard_communities::StandardCommunity;
     use crate::peer_attrs::peer_data::{PeerLocation, PeerType};
-    use bgpkit_parser::models::Asn;
+    //use bgpkit_parser::models::Asn;
+    use crate::mrt_asn::asn::MrtAsn;
     use std::collections::HashMap;
 
+    #[derive(Debug, PartialEq, Eq)]
     pub struct CommMappings {
         peer_type: HashMap<StandardCommunity, PeerType>,
         peer_location: HashMap<StandardCommunity, PeerLocation>,
@@ -44,26 +46,27 @@ pub mod community_mappings {
     }
 
     /// Map ASNs to community sets
+    #[derive(Debug, PartialEq, Eq)]
     pub struct AsnMappings {
-        asn_mappings: HashMap<Asn, CommMappings>,
+        asn_mappings: HashMap<MrtAsn, CommMappings>,
     }
 
     impl Default for AsnMappings {
         fn default() -> Self {
-            let mut asn_mappings = HashMap::<Asn, CommMappings>::new();
+            let mut asn_mappings = HashMap::<MrtAsn, CommMappings>::new();
             insert_comm_mapping(&mut asn_mappings);
             Self::new(asn_mappings)
         }
     }
 
     impl AsnMappings {
-        pub fn new(asn_mappings: HashMap<Asn, CommMappings>) -> AsnMappings {
+        pub fn new(asn_mappings: HashMap<MrtAsn, CommMappings>) -> AsnMappings {
             AsnMappings { asn_mappings }
         }
 
         pub fn get_asn_peer_location(
             &self,
-            asn: &Asn,
+            asn: &MrtAsn,
             community: &StandardCommunity,
         ) -> Option<&PeerLocation> {
             if self.asn_mappings.contains_key(asn) {
@@ -75,7 +78,7 @@ pub mod community_mappings {
 
         pub fn get_asn_peer_type(
             &self,
-            asn: &Asn,
+            asn: &MrtAsn,
             community: &StandardCommunity,
         ) -> Option<&PeerType> {
             if self.asn_mappings.contains_key(asn) {
