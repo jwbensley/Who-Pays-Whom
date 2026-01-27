@@ -49,7 +49,7 @@ pub mod cli_args {
         pub ribs_source: RibsSource,
 
         /// Serialise result to JSON file
-        #[arg(short, long, default_value_t = String::from("./2026-01-14.json"))]
+        #[arg(short, long, default_value_t = String::from("./results.json"))]
         pub json: String,
 
         /// Number of threads to use for parsing MRT files

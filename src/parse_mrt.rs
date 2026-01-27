@@ -42,7 +42,7 @@ pub mod mrt_parser {
             for asn_1 in as_sequence.iter() {
                 // We could see up to three T1 ASNs in a row e.g. AS3 AS2 AS1 AS65535.
                 // AS3 peers with AS2, AS1 is transit customer of AS2 (despite being "Tier 1").
-                // 65535 is transit customer of AS1.
+                // AS65535 is non-T1 transit customer of AS1.
                 // In this case we need to check AS3-AS2 communities and AS2-AS1 communities.
                 if asn_1.is_t1() {
                     let pos_1 = as_sequence.iter().position(|x| x == asn_1).unwrap();

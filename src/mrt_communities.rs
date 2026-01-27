@@ -85,6 +85,11 @@ pub mod standard_communities {
             for community in communities {
                 if let Community::Custom(asn, value) = community {
                     standard_communities.add(StandardCommunity::new(asn.to_u32(), value));
+                } else if let Community::NoAdvertise
+                | Community::NoExport
+                | Community::NoExportSubConfed = community
+                {
+                    // NO-OP - we're not interested in these communities
                 } else {
                     panic!(
                         "Couldn't unpack Community into StandardCommunity: {}",
