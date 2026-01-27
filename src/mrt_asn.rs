@@ -31,7 +31,7 @@ pub mod asn {
 
     impl MrtAsn {
         pub fn new(asn: Asn) -> Self {
-            Self { 0: asn }
+            Self(asn)
         }
 
         pub fn from_u32(asn: u32) -> Self {

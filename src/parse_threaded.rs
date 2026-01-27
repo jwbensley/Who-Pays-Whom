@@ -10,7 +10,7 @@ pub mod threaded_parser {
     use std::sync::{Arc, RwLock};
 
     /// Parse a list of RIB files in parallel
-    pub fn parse_rib_files(rib_files: &Vec<RibFile>) {
+    pub fn parse_rib_files(rib_files: &Vec<RibFile>) -> GlobalPeerings {
         info!("Going to parse {} RIB files", rib_files.len());
         debug!(
             "{:?}",
@@ -31,7 +31,12 @@ pub mod threaded_parser {
             )
         });
 
-        info! {"{:#?}", global_peerings.read().unwrap()};
+        debug! {"{:#?}", global_peerings.read().unwrap()};
+
+        Arc::try_unwrap(global_peerings)
+            .unwrap()
+            .into_inner()
+            .unwrap()
     }
 
     /// Per thread loop over a single file
@@ -56,7 +61,7 @@ pub mod threaded_parser {
     }
 
     /// Parse a single file across multiple threads
-    pub fn parse_rib_file_threaded(fp: &String) {
+    pub fn parse_rib_file_threaded(fp: &String) -> GlobalPeerings {
         info!("Parsing sinlge file {}", fp);
 
         let asn_mappings = AsnMappings::default();
@@ -81,6 +86,11 @@ pub mod threaded_parser {
                 )
             });
 
-        info! {"{:#?}", global_peerings.read().unwrap()};
+        debug! {"{:#?}", global_peerings.read().unwrap()};
+
+        Arc::try_unwrap(global_peerings)
+            .unwrap()
+            .into_inner()
+            .unwrap()
     }
 }

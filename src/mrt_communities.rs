@@ -1,7 +1,6 @@
 pub mod standard_communities {
     use crate::comm_mappings::community_mappings::AsnMappings;
-    use crate::mrt_asn::asn::{self, MrtAsn};
-    use crate::mrt_peer::peer;
+    use crate::mrt_asn::asn::MrtAsn;
     use crate::peer_attrs::peer_data::{PeerLocation, PeerType};
     use bgpkit_parser::models::Community;
     use log::debug;
@@ -30,7 +29,8 @@ pub mod standard_communities {
 
     impl Hash for StandardCommunity {
         fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-            core::mem::discriminant(&self).hash(state);
+            self.asn.clone().to_u32().hash(state);
+            self.value.hash(state);
         }
     }
 
@@ -39,17 +39,6 @@ pub mod standard_communities {
             Self {
                 asn: MrtAsn::from_u32(asn),
                 value,
-            }
-        }
-
-        pub fn from(community: Community) -> Self {
-            if let Community::Custom(asn, value) = community {
-                Self::new(asn.to_u32(), value)
-            } else {
-                panic!(
-                    "Couldn't unpack Community into StandardCommunity: {}",
-                    community
-                );
             }
         }
 
@@ -63,12 +52,11 @@ pub mod standard_communities {
     }
 
     #[derive(Clone, Debug, Eq, PartialEq)]
-    pub struct StandardCommunities<'a> {
+    pub struct StandardCommunities {
         standard_communities: Vec<StandardCommunity>,
-        peer_mappings: &'a AsnMappings,
     }
 
-    impl Serialize for StandardCommunities<'_> {
+    impl Serialize for StandardCommunities {
         fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
         where
             S: Serializer,
@@ -81,14 +69,10 @@ pub mod standard_communities {
         }
     }
 
-    impl<'a> StandardCommunities<'a> {
-        pub fn new(
-            standard_communities: Vec<StandardCommunity>,
-            peer_mappings: &'a AsnMappings,
-        ) -> Self {
+    impl<'a> StandardCommunities {
+        pub fn new(standard_communities: Vec<StandardCommunity>) -> Self {
             Self {
                 standard_communities,
-                peer_mappings,
             }
         }
 
@@ -96,10 +80,17 @@ pub mod standard_communities {
             self.standard_communities.push(c);
         }
 
-        fn from_vec(communities: Vec<Community>, asn_mappings: &'a AsnMappings) -> Self {
-            let mut standard_communities = Self::new(Vec::<StandardCommunity>::new(), asn_mappings);
+        pub fn from_vec(communities: Vec<Community>) -> Self {
+            let mut standard_communities = Self::new(Vec::<StandardCommunity>::new());
             for community in communities {
-                standard_communities.add(StandardCommunity::from(community));
+                if let Community::Custom(asn, value) = community {
+                    standard_communities.add(StandardCommunity::new(asn.to_u32(), value));
+                } else {
+                    panic!(
+                        "Couldn't unpack Community into StandardCommunity: {}",
+                        community
+                    );
+                }
             }
             standard_communities
         }

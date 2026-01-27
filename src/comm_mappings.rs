@@ -1,9 +1,8 @@
 pub mod community_mappings {
     use crate::comm_data::insert_comm_mapping;
+    use crate::mrt_asn::asn::MrtAsn;
     use crate::mrt_communities::standard_communities::StandardCommunity;
     use crate::peer_attrs::peer_data::{PeerLocation, PeerType};
-    //use bgpkit_parser::models::Asn;
-    use crate::mrt_asn::asn::MrtAsn;
     use std::collections::HashMap;
 
     #[derive(Debug, PartialEq, Eq)]

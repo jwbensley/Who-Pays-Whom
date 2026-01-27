@@ -61,7 +61,7 @@ pub mod mrt_parser {
                             asn_1,
                             asn_2,
                             &as_sequence,
-                            &peer_id_map.get_peer(&rib_entry.peer_index),
+                            peer_id_map.get_peer(&rib_entry.peer_index),
                             &prefix,
                         );
 
@@ -72,9 +72,19 @@ pub mod mrt_parser {
                             break;
                         }
 
-                        let pos_3 = pos_2 + 1;
-                        let asn_3 = &as_sequence[pos_3];
+                        let asn_3 = &as_sequence[pos_2 + 1];
                         if asn_3.is_t1() {
+                            let route = build_route(
+                                rib_entry,
+                                fp,
+                                asn_mappings,
+                                asn_2,
+                                asn_3,
+                                &as_sequence,
+                                peer_id_map.get_peer(&rib_entry.peer_index),
+                                &prefix,
+                            );
+
                             add_peering(global_peerings, &route);
                         }
                     }
@@ -175,9 +185,9 @@ pub mod mrt_parser {
             })
             .value
         {
-            StandardCommunities::from_iter(communities)
+            StandardCommunities::from_vec(communities)
         } else {
-            StandardCommunities::from_iter(Vec::new())
+            StandardCommunities::from_vec(Vec::new())
         }
     }
 
@@ -245,7 +255,7 @@ pub mod mrt_parser {
             let has_peering: bool;
             {
                 let gb_lock = global_peerings.read().unwrap();
-                has_peering = gb_lock.has_peering(&route);
+                has_peering = gb_lock.has_peering(route);
             }
             if !has_peering {
                 let mut gb_lock = global_peerings.write().unwrap();

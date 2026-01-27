@@ -2,8 +2,12 @@ pub mod global_peerings {
     use crate::mrt_asn::asn::MrtAsn;
     use crate::mrt_route::route::{IpVersion, Route};
     use crate::peer_attrs::peer_data::{PeerLocation, PeerType};
+    use log::info;
     use serde::Serialize;
+    use serde_json;
     use std::collections::HashMap;
+    use std::fs::File;
+    use std::io::BufWriter;
 
     #[derive(Debug, Serialize)]
     pub struct PeeringsByVersion {
@@ -255,6 +259,12 @@ pub mod global_peerings {
                 return asn_data.has_peering(route);
             }
             false
+        }
+
+        pub fn to_file(&self, filename: &String) {
+            let writer = BufWriter::new(File::create(filename).unwrap());
+            serde_json::to_writer_pretty(writer, self).unwrap();
+            info!("Wrote JSON to {}", filename);
         }
     }
 }

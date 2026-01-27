@@ -38,13 +38,13 @@ pub mod peer {
         pub fn from(peer_table: &HashMap<u16, BgpKit_Peer>) -> Self {
             let mut pt = HashMap::<u16, Peer>::new();
             for key in peer_table.keys() {
-                pt.insert(key.clone(), Peer::new(peer_table.get(key).unwrap().clone()));
+                pt.insert(*key, Peer::new(*peer_table.get(key).unwrap()));
             }
             Self::new(pt)
         }
 
         pub fn get_peer(&self, id: &u16) -> &Peer {
-            &self.peer_table.get(id).unwrap()
+            self.peer_table.get(id).unwrap()
         }
     }
 }
