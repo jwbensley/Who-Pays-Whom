@@ -9,6 +9,7 @@ pub mod mrt_peer;
 pub mod mrt_route;
 pub mod parse_mrt;
 pub mod parse_threaded;
+pub mod paths;
 pub mod peer_attrs;
 pub mod peerings;
 pub mod ribs;
