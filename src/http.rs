@@ -16,26 +16,26 @@ pub mod http_client {
             return;
         }
 
-        debug!("GET'ing URL {}", url);
+        info!("GET'ing URL {}", url);
 
         let client = Client::builder()
-            .timeout(Duration::from_secs(300)) // Increase default timeout
+            .timeout(Duration::from_secs(900)) // Increase default timeout
             .build()
             .unwrap();
 
         let response = client
             .get(url)
             .send()
-            .map_err(|e| format!("HTTP GET failed: {}", e))
+            .map_err(|e| format!("HTTP GET failed for URL {}: {}", url, e))
             .unwrap();
 
         let content = response
             .bytes()
-            .map_err(|e| format!("Failed to read response bytes: {}", e))
+            .map_err(|e| format!("Failed to read response bytes when GETting {}. This could be due to a timeout. Error: {}", url, e))
             .unwrap();
 
         File::create(dest)
-            .map_err(|e| format!("Failed to create file: {}", e))
+            .map_err(|e| format!("Failed to create file {:?}: {}", dest, e))
             .unwrap()
             .write_all(&content)
             .unwrap();

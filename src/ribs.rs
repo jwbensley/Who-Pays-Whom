@@ -2,6 +2,7 @@ pub mod rib_getter {
     use crate::http::http_client::download_file;
     use bgpkit_broker::BgpkitBroker;
     use log::{debug, info};
+    use rayon::iter::{IntoParallelIterator, ParallelIterator};
     use std::fs;
     use std::path::Path;
 
@@ -26,9 +27,9 @@ pub mod rib_getter {
             fs::create_dir(mrt_path).unwrap();
         }
 
-        for rib_file in rib_files {
-            download_file(&rib_file.url, Path::new(&rib_file.filename))
-        }
+        rib_files
+            .into_par_iter()
+            .for_each(|rib_file| download_file(&rib_file.url, Path::new(&rib_file.filename)));
     }
 
     /// Return a list of available RIBs for a specific day (with details like download URL)
