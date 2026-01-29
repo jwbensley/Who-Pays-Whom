@@ -48,9 +48,13 @@ pub mod cli_args {
         #[command(subcommand)]
         pub ribs_source: RibsSource,
 
-        /// Serialise result to JSON file
-        #[arg(short, long, default_value_t = String::from("./results.json"))]
-        pub json: String,
+        /// Serialise discovered peerings to JSON file
+        #[arg(short, long, default_value_t = String::from("./peering_data.json"))]
+        pub peering_data: String,
+
+        /// Serialise discovered triple T1 paths to JSON file
+        #[arg(short, long, default_value_t = String::from("./triple_t1_paths.json"))]
+        pub triple_t1_paths: String,
 
         /// Number of threads to use for parsing MRT files
         #[arg(short, long, default_value_t = 1)]

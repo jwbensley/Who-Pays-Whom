@@ -1,9 +1,10 @@
 pub mod threaded_parser {
+    use crate::args::cli_args::CliArgs;
     use crate::comm_mappings::community_mappings::AsnMappings;
     use crate::parse_mrt::mrt_parser::{MrtData, get_peer_id_map, parse_mrt_entry};
-    use crate::paths::triple_t1_paths::TripleT1Paths;
-    use crate::peerings::global_peerings::GlobalPeerings;
+    use crate::peerings::peering_data::PeeringData;
     use crate::ribs::rib_getter::RibFile;
+    use crate::triple_paths::triple_t1_paths::TripleT1Paths;
     use bgpkit_parser::BgpkitParser;
     use log::{debug, info};
     use rayon::iter::{IntoParallelIterator, ParallelIterator};
@@ -11,7 +12,7 @@ pub mod threaded_parser {
     use std::sync::{Arc, RwLock};
 
     /// Parse a list of RIB files in parallel
-    pub fn parse_rib_files(rib_files: &Vec<RibFile>) -> GlobalPeerings {
+    pub fn parse_rib_files(rib_files: &Vec<RibFile>, args: &CliArgs) {
         info!("Going to parse {} RIB files", rib_files.len());
         debug!(
             "{:?}",
@@ -22,31 +23,33 @@ pub mod threaded_parser {
         );
 
         let asn_mappings = AsnMappings::default();
-        let global_peerings = Arc::new(RwLock::new(GlobalPeerings::default()));
+        let peering_data = Arc::new(RwLock::new(PeeringData::default()));
         let triple_t1_paths = Arc::new(RwLock::new(TripleT1Paths::default()));
 
         rib_files.into_par_iter().for_each(|rib_file| {
             parse_rib_file(
                 &rib_file.filename,
                 &asn_mappings,
-                Arc::clone(&global_peerings),
+                Arc::clone(&peering_data),
                 Arc::clone(&triple_t1_paths),
             )
         });
 
-        debug! {"{:#?}", global_peerings.read().unwrap()};
+        debug! {"{:#?}", peering_data.read().unwrap()};
+        peering_data.read().unwrap().to_file(&args.peering_data);
 
-        Arc::try_unwrap(global_peerings)
+        debug! {"{:#?}", triple_t1_paths.read().unwrap()};
+        triple_t1_paths
+            .read()
             .unwrap()
-            .into_inner()
-            .unwrap()
+            .to_file(&args.triple_t1_paths);
     }
 
     /// Per thread loop over a single file
     fn parse_rib_file(
         fp: &String,
         asn_mappings: &AsnMappings,
-        global_peerings: Arc<RwLock<GlobalPeerings>>,
+        peering_data: Arc<RwLock<PeeringData>>,
         triple_t1_paths: Arc<RwLock<TripleT1Paths>>,
     ) {
         info!("Parsing {}", fp);
@@ -60,7 +63,7 @@ pub mod threaded_parser {
         parser.into_record_iter().skip(1).for_each(|mrt_entry| {
             parse_mrt_entry(MrtData::new(
                 &mrt_entry,
-                &Arc::clone(&global_peerings),
+                &Arc::clone(&peering_data),
                 &Arc::clone(&triple_t1_paths),
                 &peer_id_map,
                 asn_mappings,
@@ -72,11 +75,11 @@ pub mod threaded_parser {
     }
 
     /// Parse a single file across multiple threads
-    pub fn parse_rib_file_threaded(fp: &String) -> GlobalPeerings {
-        info!("Parsing sinlge file {}", fp);
+    pub fn parse_rib_file_threaded(fp: &String, args: &CliArgs) {
+        info!("Parsing singe file {}", fp);
 
         let asn_mappings = AsnMappings::default();
-        let global_peerings = Arc::new(RwLock::new(GlobalPeerings::default()));
+        let peering_data = Arc::new(RwLock::new(PeeringData::default()));
         let triple_t1_paths = Arc::new(RwLock::new(TripleT1Paths::default()));
         let peer_id_map = get_peer_id_map(fp);
         debug!("Peer Map for {}: {:#?}\n", fp, peer_id_map);
@@ -91,7 +94,7 @@ pub mod threaded_parser {
             .for_each(|mrt_entry| {
                 parse_mrt_entry(MrtData::new(
                     &mrt_entry,
-                    &Arc::clone(&global_peerings),
+                    &Arc::clone(&peering_data),
                     &Arc::clone(&triple_t1_paths),
                     &peer_id_map,
                     &asn_mappings,
@@ -99,11 +102,7 @@ pub mod threaded_parser {
                 ))
             });
 
-        debug! {"{:#?}", global_peerings.read().unwrap()};
-
-        Arc::try_unwrap(global_peerings)
-            .unwrap()
-            .into_inner()
-            .unwrap()
+        debug! {"{:#?}", peering_data.read().unwrap()};
+        peering_data.read().unwrap().to_file(&args.peering_data);
     }
 }

@@ -4,9 +4,9 @@ pub mod mrt_parser {
     use crate::mrt_communities::standard_communities::StandardCommunities;
     use crate::mrt_peer::peer::PeerTable;
     use crate::mrt_route::route::Route;
-    use crate::paths::triple_t1_paths::TripleT1Paths;
+    use crate::triple_paths::triple_t1_paths::TripleT1Paths;
     use crate::peer_attrs::peer_data::{PeerLocation, PeerType};
-    use crate::peerings::global_peerings::GlobalPeerings;
+    use crate::peerings::peering_data::PeeringData;
     use bgpkit_parser::models::{
         AsPathSegment, AttrFlags, AttrType, Attribute, AttributeValue, MrtMessage, RibAfiEntries,
         RibEntry, TableDumpV2Message, TableDumpV2Type,
@@ -18,7 +18,7 @@ pub mod mrt_parser {
 
     pub struct MrtData<'a> {
         mrt_entry: &'a MrtRecord,
-        global_peerings: &'a Arc<RwLock<GlobalPeerings>>,
+        global_peerings: &'a Arc<RwLock<PeeringData>>,
         triple_t1_paths: &'a Arc<RwLock<TripleT1Paths>>,
         peer_id_map: &'a PeerTable,
         asn_mappings: &'a AsnMappings,
@@ -28,7 +28,7 @@ pub mod mrt_parser {
     impl<'a> MrtData<'a> {
         pub fn new(
             mrt_entry: &'a MrtRecord,
-            global_peerings: &'a Arc<RwLock<GlobalPeerings>>,
+            global_peerings: &'a Arc<RwLock<PeeringData>>,
             triple_t1_paths: &'a Arc<RwLock<TripleT1Paths>>,
             peer_id_map: &'a PeerTable,
             asn_mappings: &'a AsnMappings,
@@ -45,6 +45,7 @@ pub mod mrt_parser {
         }
     }
 
+    /// Extract the prefix from each RIB entry and proceed to check the AS path for that prefix
     pub fn parse_mrt_entry(mrt_data: MrtData) {
         let rib_entries = get_rib_entries(mrt_data.mrt_entry, mrt_data.fp);
         if rib_entries.is_none() {
@@ -60,56 +61,57 @@ pub mod mrt_parser {
         let prefix = rib_entries.prefix.prefix;
 
         for rib_entry in &rib_entries.rib_entries {
-            let mut as_sequence = get_as_sequence(rib_entry, mrt_data.fp);
-            as_sequence.dedup();
+            check_as_seq(prefix, rib_entry, &mrt_data);
+        }
+    }
 
-            for asn_1 in as_sequence.iter() {
-                if asn_1.is_skip_asn() {
-                    continue;
+    /// Check an AS Path if it containers two neighboring T1 ASNs
+    pub fn check_as_seq(prefix: IpNet, rib_entry: &RibEntry, mrt_data: &MrtData) {
+        let mut as_sequence = get_as_sequence(rib_entry, mrt_data.fp);
+        as_sequence.dedup();
+
+        if as_sequence[0].is_skip_asn() {
+            // Skip paths which are being sent to the route collector from ASNs
+            // known to be providing inaccurate data
+            return;
+        }
+
+        for asn_1 in as_sequence.iter() {
+            // We could see up to three T1 ASNs in a row e.g. AS3 AS2 AS1 AS65535.
+            // AS3 peers with AS2, AS1 is transit customer of AS2 (despite being "Tier 1").
+            // AS65535 is non-T1 transit customer of AS1.
+            // In this case we need to check AS3-AS2 communities and AS2-AS1 communities.
+            if asn_1.is_t1_asn() {
+                let pos_1 = as_sequence.iter().position(|x| x == asn_1).unwrap();
+                if pos_1 == as_sequence.len() - 1 {
+                    // Last ASN in the path
+                    break;
                 }
 
-                // We could see up to three T1 ASNs in a row e.g. AS3 AS2 AS1 AS65535.
-                // AS3 peers with AS2, AS1 is transit customer of AS2 (despite being "Tier 1").
-                // AS65535 is non-T1 transit customer of AS1.
-                // In this case we need to check AS3-AS2 communities and AS2-AS1 communities.
-                if asn_1.is_t1_asn() {
-                    let pos_1 = as_sequence.iter().position(|x| x == asn_1).unwrap();
-                    if pos_1 == as_sequence.len() - 1 {
+                let pos_2 = pos_1 + 1;
+                let asn_2 = &as_sequence[pos_2];
+                if asn_2.is_t1_asn() {
+                    let route =
+                        build_route(mrt_data, rib_entry, asn_1, asn_2, &as_sequence, &prefix);
+
+                    add_peering(mrt_data.global_peerings, &route);
+
+                    if pos_2 == as_sequence.len() - 1 {
                         // Last ASN in the path
                         break;
                     }
 
-                    let pos_2 = pos_1 + 1;
-                    let asn_2 = &as_sequence[pos_2];
-                    if asn_2.is_t1_asn() {
+                    let asn_3 = &as_sequence[pos_2 + 1];
+                    if asn_3.is_t1_asn() {
                         let route =
-                            build_route(&mrt_data, rib_entry, asn_1, asn_2, &as_sequence, &prefix);
+                            build_route(mrt_data, rib_entry, asn_2, asn_3, &as_sequence, &prefix);
 
                         add_peering(mrt_data.global_peerings, &route);
-
-                        if pos_2 == as_sequence.len() - 1 {
-                            // Last ASN in the path
-                            break;
-                        }
-
-                        let asn_3 = &as_sequence[pos_2 + 1];
-                        if asn_3.is_t1_asn() {
-                            let route = build_route(
-                                &mrt_data,
-                                rib_entry,
-                                asn_2,
-                                asn_3,
-                                &as_sequence,
-                                &prefix,
-                            );
-
-                            add_peering(mrt_data.global_peerings, &route);
-                            add_triple_t1_path(
-                                mrt_data.triple_t1_paths,
-                                Vec::from([asn_1.clone(), asn_2.clone(), asn_3.clone()]),
-                                &route,
-                            );
-                        }
+                        add_triple_t1_path(
+                            mrt_data.triple_t1_paths,
+                            Vec::from([asn_1.clone(), asn_2.clone(), asn_3.clone()]),
+                            &route,
+                        );
                     }
                 }
             }
@@ -270,7 +272,7 @@ pub mod mrt_parser {
         )
     }
 
-    fn add_peering(global_peerings: &Arc<RwLock<GlobalPeerings>>, route: &Route) {
+    fn add_peering(global_peerings: &Arc<RwLock<PeeringData>>, route: &Route) {
         if *route.get_peer_type() != PeerType::NoneFound
             && *route.get_peer_location() != PeerLocation::NoneFound
         {

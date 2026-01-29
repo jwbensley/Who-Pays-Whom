@@ -9,13 +9,12 @@ pub mod mrt_peer;
 pub mod mrt_route;
 pub mod parse_mrt;
 pub mod parse_threaded;
-pub mod paths;
 pub mod peer_attrs;
 pub mod peerings;
 pub mod ribs;
+pub mod triple_paths;
 
 use crate::parse_threaded::threaded_parser::{parse_rib_file_threaded, parse_rib_files};
-use crate::peerings::global_peerings::GlobalPeerings;
 use crate::ribs::rib_getter::download_ribs_for_day;
 use crate::{args::cli_args::RibsSource, ribs::rib_getter::RibFile};
 use rayon::ThreadPoolBuilder;
@@ -33,15 +32,15 @@ fn main() {
         .build_global()
         .unwrap();
 
-    let global_peerings: GlobalPeerings = match args.ribs_source {
+    match args.ribs_source {
         // Download MRT files and then parse them - one file per thread
         RibsSource::Download(_) => {
             let rib_files = download_ribs_for_day(args.get_ribs_ymd(), args.get_ribs_path());
-            parse_rib_files(&rib_files)
+            parse_rib_files(&rib_files, &args)
         }
 
         // Parse a single existing file - split across multiple threads
-        RibsSource::File(_) => parse_rib_file_threaded(args.get_rib_file()),
+        RibsSource::File(_) => parse_rib_file_threaded(args.get_rib_file(), &args),
 
         // Parse multiple existing files - one file per thread
         RibsSource::Files(_) => {
@@ -54,9 +53,7 @@ fn main() {
                 })
                 .collect();
 
-            parse_rib_files(&rib_files)
+            parse_rib_files(&rib_files, &args);
         }
     };
-
-    global_peerings.to_file(&args.json);
 }

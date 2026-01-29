@@ -1,7 +1,10 @@
 pub mod triple_t1_paths {
-    use crate::{mrt_asn::asn::MrtAsn, mrt_route::route::Route};
-    use std::collections::HashMap;
+    use log::info;
 
+    use crate::{mrt_asn::asn::MrtAsn, mrt_route::route::Route};
+    use std::{collections::HashMap, fs::File, io::BufWriter};
+
+    #[derive(serde::Serialize, Debug)]
     pub struct TripleT1Paths {
         triple_t1_paths: HashMap<Vec<MrtAsn>, Route>,
     }
@@ -23,6 +26,12 @@ pub mod triple_t1_paths {
 
         pub fn add_path(&mut self, triple_t1_path: Vec<MrtAsn>, route: Route) {
             self.triple_t1_paths.insert(triple_t1_path, route);
+        }
+
+        pub fn to_file(&self, filename: &String) {
+            let writer = BufWriter::new(File::create(filename).unwrap());
+            serde_json::to_writer_pretty(writer, self).unwrap();
+            info!("Wrote JSON to {}", filename);
         }
     }
 }

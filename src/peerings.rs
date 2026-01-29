@@ -1,4 +1,4 @@
-pub mod global_peerings {
+pub mod peering_data {
     use crate::mrt_asn::asn::MrtAsn;
     use crate::mrt_route::route::{IpVersion, Route};
     use crate::peer_attrs::peer_data::{PeerLocation, PeerType};
@@ -217,24 +217,24 @@ pub mod global_peerings {
 
     /// Public API which provides access to all peerings, keyed by local ASN
     #[derive(Debug, Serialize)]
-    pub struct GlobalPeerings {
-        global_peerings: HashMap<MrtAsn, AsnPeerings>,
+    pub struct PeeringData {
+        peering_data: HashMap<MrtAsn, AsnPeerings>,
     }
 
-    impl Default for GlobalPeerings {
+    impl Default for PeeringData {
         fn default() -> Self {
             Self::new(HashMap::<MrtAsn, AsnPeerings>::new())
         }
     }
 
-    impl GlobalPeerings {
-        pub fn new(global_peerings: HashMap<MrtAsn, AsnPeerings>) -> Self {
-            Self { global_peerings }
+    impl PeeringData {
+        pub fn new(peering_data: HashMap<MrtAsn, AsnPeerings>) -> Self {
+            Self { peering_data }
         }
 
         pub fn add_peering(&mut self, route: Route) {
             if !self.has_data_for(&route) {
-                self.global_peerings
+                self.peering_data
                     .insert(route.get_local_as().to_owned(), AsnPeerings::from(route));
             } else {
                 self.get_asn_data_mut(&route).add_peering(route);
@@ -242,15 +242,15 @@ pub mod global_peerings {
         }
 
         fn get_asn_data(&self, route: &Route) -> &AsnPeerings {
-            self.global_peerings.get(route.get_local_as()).unwrap()
+            self.peering_data.get(route.get_local_as()).unwrap()
         }
 
         fn get_asn_data_mut(&mut self, route: &Route) -> &mut AsnPeerings {
-            self.global_peerings.get_mut(route.get_local_as()).unwrap()
+            self.peering_data.get_mut(route.get_local_as()).unwrap()
         }
 
         fn has_data_for(&self, route: &Route) -> bool {
-            self.global_peerings.contains_key(route.get_local_as())
+            self.peering_data.contains_key(route.get_local_as())
         }
 
         pub fn has_peering(&self, route: &Route) -> bool {
