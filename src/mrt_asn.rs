@@ -7,7 +7,7 @@ pub mod asn {
         7018, 12956,
     ];
 
-    static SKIP_ASNS: [u32; 1] = [37486];
+    static SKIP_ASNS: [u32; 1] = [37468];
 
     #[derive(Debug, Clone, PartialEq, Eq, Hash)]
     pub struct MrtAsn(Asn);
