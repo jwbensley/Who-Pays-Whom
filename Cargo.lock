@@ -2459,6 +2459,7 @@ dependencies = [
  "clap",
  "env_logger",
  "ipnet",
+ "itertools",
  "log",
  "rayon",
  "regex",

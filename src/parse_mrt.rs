@@ -4,9 +4,9 @@ pub mod mrt_parser {
     use crate::mrt_communities::standard_communities::StandardCommunities;
     use crate::mrt_peer::peer::PeerTable;
     use crate::mrt_route::route::Route;
-    use crate::triple_paths::triple_t1_paths::TripleT1Paths;
     use crate::peer_attrs::peer_data::{PeerLocation, PeerType};
     use crate::peerings::peering_data::PeeringData;
+    use crate::triple_paths::triple_t1_paths::TripleT1Paths;
     use bgpkit_parser::models::{
         AsPathSegment, AttrFlags, AttrType, Attribute, AttributeValue, MrtMessage, RibAfiEntries,
         RibEntry, TableDumpV2Message, TableDumpV2Type,
@@ -69,6 +69,11 @@ pub mod mrt_parser {
     pub fn check_as_seq(prefix: IpNet, rib_entry: &RibEntry, mrt_data: &MrtData) {
         let mut as_sequence = get_as_sequence(rib_entry, mrt_data.fp);
         as_sequence.dedup();
+
+        if as_sequence.is_empty() {
+            // Some collectors include iBGP paths or self originated prefixes with no AS path
+            return;
+        }
 
         if as_sequence[0].is_skip_asn() {
             // Skip paths which are being sent to the route collector from ASNs

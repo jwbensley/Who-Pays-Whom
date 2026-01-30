@@ -12,6 +12,15 @@ pub mod rib_getter {
         pub filename: String,
     }
 
+    impl RibFile {
+        pub fn new(url: String, filename: String) -> Self {
+            Self { url, filename }
+        }
+        pub fn get_filename(&self) -> &String {
+            &self.filename
+        }
+    }
+
     /// Download all the ribs files for a specific day
     pub fn download_ribs_for_day(date: &str, dir: &str) -> Vec<RibFile> {
         info!("Downloading MRT RIBs for {}", date);

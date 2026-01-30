@@ -11,14 +11,14 @@ pub mod threaded_parser {
     use rayon::prelude::*;
     use std::sync::{Arc, RwLock};
 
-    /// Parse a list of RIB files in parallel
+    /// Setup parallel parsing of RIB files
     pub fn parse_rib_files(rib_files: &Vec<RibFile>, args: &CliArgs) {
         info!("Going to parse {} RIB files", rib_files.len());
         debug!(
             "{:?}",
             rib_files
                 .iter()
-                .map(|x| &x.filename)
+                .map(|x| x.get_filename())
                 .collect::<Vec<&String>>()
         );
 
@@ -26,14 +26,23 @@ pub mod threaded_parser {
         let peering_data = Arc::new(RwLock::new(PeeringData::default()));
         let triple_t1_paths = Arc::new(RwLock::new(TripleT1Paths::default()));
 
-        rib_files.into_par_iter().for_each(|rib_file| {
-            parse_rib_file(
-                &rib_file.filename,
+        if rib_files.len() == 1 {
+            parse_rib_file_threaded(
+                rib_files[0].get_filename(),
                 &asn_mappings,
                 Arc::clone(&peering_data),
                 Arc::clone(&triple_t1_paths),
-            )
-        });
+            );
+        } else {
+            rib_files.into_par_iter().for_each(|rib_file| {
+                parse_rib_file(
+                    rib_file.get_filename(),
+                    &asn_mappings,
+                    Arc::clone(&peering_data),
+                    Arc::clone(&triple_t1_paths),
+                )
+            });
+        }
 
         debug! {"{:#?}", peering_data.read().unwrap()};
         peering_data.read().unwrap().to_file(&args.peering_data);
@@ -75,12 +84,14 @@ pub mod threaded_parser {
     }
 
     /// Parse a single file across multiple threads
-    pub fn parse_rib_file_threaded(fp: &String, args: &CliArgs) {
-        info!("Parsing singe file {}", fp);
+    pub fn parse_rib_file_threaded(
+        fp: &String,
+        asn_mappings: &AsnMappings,
+        peering_data: Arc<RwLock<PeeringData>>,
+        triple_t1_paths: Arc<RwLock<TripleT1Paths>>,
+    ) {
+        info!("Parsing {}", fp);
 
-        let asn_mappings = AsnMappings::default();
-        let peering_data = Arc::new(RwLock::new(PeeringData::default()));
-        let triple_t1_paths = Arc::new(RwLock::new(TripleT1Paths::default()));
         let peer_id_map = get_peer_id_map(fp);
         debug!("Peer Map for {}: {:#?}\n", fp, peer_id_map);
 
@@ -101,8 +112,5 @@ pub mod threaded_parser {
                     fp,
                 ))
             });
-
-        debug! {"{:#?}", peering_data.read().unwrap()};
-        peering_data.read().unwrap().to_file(&args.peering_data);
     }
 }

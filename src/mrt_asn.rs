@@ -1,4 +1,6 @@
 pub mod asn {
+    use std::fmt;
+
     use bgpkit_parser::models::Asn;
     use serde::{Serialize, Serializer};
 
@@ -11,6 +13,12 @@ pub mod asn {
 
     #[derive(Debug, Clone, PartialEq, Eq, Hash)]
     pub struct MrtAsn(Asn);
+
+    impl fmt::Display for MrtAsn {
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            write!(f, "{}", self.0)
+        }
+    }
 
     impl Serialize for MrtAsn {
         fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
