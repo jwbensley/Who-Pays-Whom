@@ -1,6 +1,7 @@
 pub mod args;
 pub mod comm_data;
 pub mod comm_mappings;
+pub mod file;
 pub mod http;
 pub mod logging;
 pub mod mrt_asn;

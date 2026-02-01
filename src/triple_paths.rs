@@ -1,4 +1,5 @@
 pub mod triple_t1_paths {
+    use crate::file::ensure_dir;
     use crate::{mrt_asn::asn::MrtAsn, mrt_route::route::Route};
     use itertools::Itertools;
     use log::info;
@@ -43,6 +44,7 @@ pub mod triple_t1_paths {
         }
 
         pub fn to_file(&self, filename: &String) {
+            ensure_dir(filename);
             let writer = BufWriter::new(File::create(filename).unwrap());
             serde_json::to_writer_pretty(writer, &self).unwrap();
             info!("Wrote JSON to {}", filename);

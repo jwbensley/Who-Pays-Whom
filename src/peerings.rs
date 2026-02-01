@@ -1,4 +1,5 @@
 pub mod peering_data {
+    use crate::file::ensure_dir;
     use crate::mrt_asn::asn::MrtAsn;
     use crate::mrt_route::route::{IpVersion, Route};
     use crate::peer_attrs::peer_data::{PeerLocation, PeerType};
@@ -262,6 +263,7 @@ pub mod peering_data {
         }
 
         pub fn to_file(&self, filename: &String) {
+            ensure_dir(filename);
             let writer = BufWriter::new(File::create(filename).unwrap());
             serde_json::to_writer_pretty(writer, self).unwrap();
             info!("Wrote JSON to {}", filename);

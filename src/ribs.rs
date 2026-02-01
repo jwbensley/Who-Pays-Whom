@@ -1,9 +1,9 @@
 pub mod rib_getter {
+    use crate::file::ensure_dir;
     use crate::http::http_client::download_file;
     use bgpkit_broker::BgpkitBroker;
     use log::{debug, info};
     use rayon::iter::{IntoParallelIterator, ParallelIterator};
-    use std::fs;
     use std::path::Path;
 
     #[derive(Debug)]
@@ -25,17 +25,12 @@ pub mod rib_getter {
     pub fn download_ribs_for_day(date: &str, dir: &str) -> Vec<RibFile> {
         info!("Downloading MRT RIBs for {}", date);
         let rib_files = get_rib_list_for_day(date, dir);
-        download_ribs_to_dir(dir, &rib_files);
+        download_ribs_to_dir(&rib_files);
         rib_files
     }
 
-    fn download_ribs_to_dir(dir: &str, rib_files: &Vec<RibFile>) {
-        let mrt_path = Path::new(dir);
-        if !mrt_path.exists() {
-            debug!("Creating path: {}", mrt_path.to_str().unwrap());
-            fs::create_dir(mrt_path).unwrap();
-        }
-
+    fn download_ribs_to_dir(rib_files: &Vec<RibFile>) {
+        ensure_dir(rib_files[0].get_filename());
         rib_files
             .into_par_iter()
             .for_each(|rib_file| download_file(&rib_file.url, Path::new(&rib_file.filename)));
