@@ -12,25 +12,25 @@ import plotly.offline as po
 BASE_DIR = "./results"
 PEERING_DATA = os.path.join(BASE_DIR, "peering_data.json")
 PEERING_OUTPUT = os.path.join(BASE_DIR, "peerings.html")
-T1_ASNS = [
-    174,
-    701,
-    1273,
-    1299,
-    2914,
-    3257,
-    3320,
-    3356,
-    3491,
-    5511,
-    6453,
-    6461,
-    6762,
-    6830,
-    6939,
-    7018,
-    12956,
-]
+T1_ASNS = {
+    174: "Cogent",
+    701: "Verizon",
+    1273: "Vodafone",
+    1299: "Arelion",
+    2914: "NTT",
+    3257: "GTT",
+    3320: "DTAG",
+    3356: "Lumen",
+    3491: "PCCW",
+    5511: "Orange",
+    6453: "TATA",
+    6461: "Zayo",
+    6762: "TI Sparkle",
+    6830: "Liberty Global",
+    6939: "Hurricane Electric",
+    7018: "AT&T",
+    12956: "Telxius",
+}
 
 
 class PeerTypes(Enum):
@@ -67,25 +67,28 @@ def plot_peerings(data: dict[str, Any]) -> None:
     }
     fill_colour_map = {
         "no_data": "white",
-        "peer": "#f8e0e0",
+        "skip": "#f0f0f0",
+        "peer": "#eaf8e0",
         "non_peer": "lightgoldenrodyellow",
     }
 
-    fill_colours: dict[int, list[list[str]]] = {
-        t1_asn: [
-            [fill_colour_map["no_data"] for _ in T1_ASNS]
+    fill_colours: dict[int, list[list[str]]] = {}
+    for t1_asn in T1_ASNS.keys():
+        fill_colours[t1_asn] = [
+            [fill_colour_map["no_data"] for _ in T1_ASNS.keys()]
+        ] + [
+            [fill_colour_map["no_data"] for _ in T1_ASNS.keys()]
             for _ in PeerLocations
         ]
-        for t1_asn in T1_ASNS
-    }
 
-    text_colours: dict[int, list[list[str]]] = {
-        t1_asn: [
-            [text_colour_map["no_data"] for _ in T1_ASNS]
+    text_colours: dict[int, list[list[str]]] = {}
+    for t1_asn in T1_ASNS.keys():
+        text_colours[t1_asn] = [
+            [text_colour_map["no_data"] for _ in T1_ASNS.keys()]
+        ] + [
+            [text_colour_map["no_data"] for _ in T1_ASNS.keys()]
             for _ in PeerLocations
         ]
-        for t1_asn in T1_ASNS
-    }
 
     col_headings = ["<b>ASN</b>"] + [
         f"<b>{location.value}</b>" for location in PeerLocations
@@ -93,17 +96,23 @@ def plot_peerings(data: dict[str, Any]) -> None:
 
     # Values are by column
     all_data: dict[int, list[list[str]]] = {
-        t1_asn: [[]] + [[] for _ in PeerLocations] for t1_asn in T1_ASNS
+        t1_asn: [[]] + [[] for _ in PeerLocations] for t1_asn in T1_ASNS.keys()
     }
 
-    for t1_asn in T1_ASNS:
+    for t1_asn in T1_ASNS.keys():
 
-        for asn_index, local_asn in enumerate(T1_ASNS):
-            all_data[t1_asn][0].append(f"<b>{local_asn}</b>")
+        for asn_index, local_asn in enumerate(T1_ASNS.keys()):
+            all_data[t1_asn][0].append(
+                f"<b>{local_asn}</b> ({T1_ASNS[local_asn]})"
+            )
 
             if t1_asn == local_asn:
                 for i in range(1, len(all_data[t1_asn])):
                     all_data[t1_asn][i].append("-")
+                    fill_colours[t1_asn][i][asn_index] = fill_colour_map[
+                        "skip"
+                    ]
+
                 continue
 
             if (
@@ -125,7 +134,9 @@ def plot_peerings(data: dict[str, Any]) -> None:
                 peer_types = set(
                     list(locations[location.name]["peerings_in_loc"].keys())
                 )
-                all_data[t1_asn][loc_index + 1].append(f"{peer_types}")
+                all_data[t1_asn][loc_index + 1].append(
+                    f"{', '.join(peer_types)}"
+                )
 
                 if peer_types == set([PeerTypes.Peer.name]):
                     mapping = "peer"
@@ -152,14 +163,22 @@ def plot_peerings(data: dict[str, Any]) -> None:
                     font=dict(color="black", size=12),
                 ),
                 cells=dict(
-                    values=all_data[T1_ASNS[0]],
+                    values=all_data[list(T1_ASNS.keys())[0]],
                     line_color="gainsboro",
-                    # fill_color=fill_colours[T1_ASNS[0]],
+                    fill_color=fill_colours[list(T1_ASNS.keys())[0]],
                     align="center",
-                    font=dict(color=text_colours[T1_ASNS[0]], size=12),
+                    font=dict(
+                        color=text_colours[list(T1_ASNS.keys())[0]], size=12
+                    ),
                 ),
             )
         ]
+    )
+
+    fig_title = dict(
+        text="Peering Locations and Relationships Inferred from Communities",
+        x=0.5,
+        font=dict(size=22),
     )
 
     fig.update_layout(  # type: ignore
@@ -175,16 +194,26 @@ def plot_peerings(data: dict[str, Any]) -> None:
                                 dict(
                                     cells=dict(
                                         values=all_data[t1_asn],
-                                        # fill_color=fill_colours[t1_asn],
+                                        line=dict(color="gainsboro"),
+                                        fill=dict(color=fill_colours[t1_asn]),
                                         font=dict(
                                             color=text_colours[t1_asn],
                                             size=12,
                                         ),
+                                    ),
+                                ),
+                                dict(
+                                    title=fig_title
+                                    | dict(
+                                        subtitle=dict(
+                                            text=f"Peerings found for AS{t1_asn} ({T1_ASNS[t1_asn]})",
+                                            font=dict(size=18),
+                                        ),
                                     )
-                                )
+                                ),
                             ],
                         )
-                        for t1_asn in T1_ASNS
+                        for t1_asn in T1_ASNS.keys()
                     ]
                 ),
             )
@@ -192,8 +221,13 @@ def plot_peerings(data: dict[str, Any]) -> None:
     )
 
     fig.update_layout(
-        title_text="Peering Matrix",
-        title_x=0.5,
+        title=fig_title
+        | dict(
+            subtitle=dict(
+                text=f"Peerings found for AS{list(T1_ASNS.keys())[0]} ({list(T1_ASNS.values())[0]})",
+                font=dict(size=18),
+            ),
+        ),
         margin=dict(l=0, r=0, b=0, t=100, pad=0),
     )
     po.plot(
