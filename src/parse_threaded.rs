@@ -11,8 +11,8 @@ pub mod threaded_parser {
     use rayon::prelude::*;
     use std::sync::{Arc, RwLock};
 
-    /// Setup parallel parsing of RIB files
-    pub fn parse_rib_files(rib_files: &Vec<RibFile>, args: &CliArgs) {
+    /// Setup and call parallel parsing of RIB files
+    pub fn init_parallel_parsing(rib_files: &Vec<RibFile>, args: &CliArgs) {
         info!("Going to parse {} RIB files", rib_files.len());
         debug!(
             "{:?}",
@@ -26,23 +26,7 @@ pub mod threaded_parser {
         let peering_data = Arc::new(RwLock::new(PeeringData::default()));
         let triple_t1_paths = Arc::new(RwLock::new(TripleT1Paths::default()));
 
-        if rib_files.len() == 1 {
-            parse_rib_file_threaded(
-                rib_files[0].get_filename(),
-                &asn_mappings,
-                Arc::clone(&peering_data),
-                Arc::clone(&triple_t1_paths),
-            );
-        } else {
-            rib_files.into_par_iter().for_each(|rib_file| {
-                parse_rib_file(
-                    rib_file.get_filename(),
-                    &asn_mappings,
-                    Arc::clone(&peering_data),
-                    Arc::clone(&triple_t1_paths),
-                )
-            });
-        }
+        parse_rib_files(rib_files, &asn_mappings, &peering_data, &triple_t1_paths);
 
         debug! {"{:#?}", peering_data.read().unwrap()};
         peering_data.read().unwrap().to_file(&args.peering_data);
@@ -54,63 +38,54 @@ pub mod threaded_parser {
             .to_file(&args.triple_t1_paths);
     }
 
-    /// Per thread loop over a single file
-    fn parse_rib_file(
-        fp: &String,
+    /// Parse RIB files using multithreading
+    fn parse_rib_files(
+        rib_files: &Vec<RibFile>,
         asn_mappings: &AsnMappings,
-        peering_data: Arc<RwLock<PeeringData>>,
-        triple_t1_paths: Arc<RwLock<TripleT1Paths>>,
+        peering_data: &Arc<RwLock<PeeringData>>,
+        triple_t1_paths: &Arc<RwLock<TripleT1Paths>>,
     ) {
-        info!("Parsing {}", fp);
+        // Spin up a thread per file for parsing
+        rib_files.into_par_iter().for_each(|rib_file| {
+            let fp = rib_file.get_filename();
+            info!("Parsing {}", fp);
+            let peer_id_map = get_peer_id_map(fp);
+            debug!("Peer Map for {}: {:#?}\n", fp, peer_id_map);
 
-        let peer_id_map = get_peer_id_map(fp);
-        debug!("Peer Map for {}: {:#?}\n", fp, peer_id_map);
+            let parser =
+                BgpkitParser::new(fp.as_str()).unwrap_or_else(|_| panic!("Unable to parse {}", fp));
 
-        let parser =
-            BgpkitParser::new(fp.as_str()).unwrap_or_else(|_| panic!("Unable to parse {}", fp));
+            if rib_files.len() == 1 {
+                // If there is only one file, parse that file across all available threads
+                parser
+                    .into_record_iter()
+                    .skip(1)
+                    .par_bridge()
+                    .for_each(|mrt_entry| {
+                        parse_mrt_entry(MrtData::new(
+                            &mrt_entry,
+                            &Arc::clone(&peering_data),
+                            &Arc::clone(&triple_t1_paths),
+                            &peer_id_map,
+                            &asn_mappings,
+                            fp,
+                        ))
+                    });
+            } else {
+                // If there are multiple files, just parse this file in this thread
+                parser.into_record_iter().skip(1).for_each(|mrt_entry| {
+                    parse_mrt_entry(MrtData::new(
+                        &mrt_entry,
+                        &Arc::clone(&peering_data),
+                        &Arc::clone(&triple_t1_paths),
+                        &peer_id_map,
+                        asn_mappings,
+                        fp,
+                    ))
+                });
+            }
 
-        parser.into_record_iter().skip(1).for_each(|mrt_entry| {
-            parse_mrt_entry(MrtData::new(
-                &mrt_entry,
-                &Arc::clone(&peering_data),
-                &Arc::clone(&triple_t1_paths),
-                &peer_id_map,
-                asn_mappings,
-                fp,
-            ))
+            info!("Parsed {}", fp,);
         });
-
-        info!("Parsed {}", fp,);
-    }
-
-    /// Parse a single file across multiple threads
-    pub fn parse_rib_file_threaded(
-        fp: &String,
-        asn_mappings: &AsnMappings,
-        peering_data: Arc<RwLock<PeeringData>>,
-        triple_t1_paths: Arc<RwLock<TripleT1Paths>>,
-    ) {
-        info!("Parsing {}", fp);
-
-        let peer_id_map = get_peer_id_map(fp);
-        debug!("Peer Map for {}: {:#?}\n", fp, peer_id_map);
-
-        let parser =
-            BgpkitParser::new(fp.as_str()).unwrap_or_else(|_| panic!("Unable to parse {}", fp));
-
-        parser
-            .into_record_iter()
-            .skip(1)
-            .par_bridge()
-            .for_each(|mrt_entry| {
-                parse_mrt_entry(MrtData::new(
-                    &mrt_entry,
-                    &Arc::clone(&peering_data),
-                    &Arc::clone(&triple_t1_paths),
-                    &peer_id_map,
-                    &asn_mappings,
-                    fp,
-                ))
-            });
     }
 }

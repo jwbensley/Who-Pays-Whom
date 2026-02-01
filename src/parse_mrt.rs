@@ -14,8 +14,10 @@ pub mod mrt_parser {
     use bgpkit_parser::{BgpkitParser, MrtRecord};
     use ipnet::IpNet;
     use std::net::IpAddr;
+    use std::path::Path;
     use std::sync::{Arc, RwLock};
 
+    // Shared data that needs to be passed around when parsing an MRT entry
     pub struct MrtData<'a> {
         mrt_entry: &'a MrtRecord,
         global_peerings: &'a Arc<RwLock<PeeringData>>,
@@ -75,13 +77,18 @@ pub mod mrt_parser {
             return;
         }
 
-        if as_sequence[0].is_skip_asn() {
-            // Skip paths which are being sent to the route collector from ASNs
-            // known to be providing inaccurate data
-            return;
-        }
-
         for asn_1 in as_sequence.iter() {
+            // Skip paths from route collectors which are known to contain inaccurate data
+            if asn_1.is_skip_asn(
+                Path::new(mrt_data.fp)
+                    .file_name()
+                    .unwrap()
+                    .to_str()
+                    .unwrap(),
+            ) {
+                return;
+            }
+
             // We could see up to three T1 ASNs in a row e.g. AS3 AS2 AS1 AS65535.
             // AS3 peers with AS2, AS1 is transit customer of AS2 (despite being "Tier 1").
             // AS65535 is non-T1 transit customer of AS1.

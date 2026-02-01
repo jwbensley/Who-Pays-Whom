@@ -15,7 +15,7 @@ pub mod peerings;
 pub mod ribs;
 pub mod triple_paths;
 
-use crate::parse_threaded::threaded_parser::parse_rib_files;
+use crate::parse_threaded::threaded_parser::init_parallel_parsing;
 use crate::ribs::rib_getter::download_ribs_for_day;
 use crate::{args::cli_args::RibsSource, ribs::rib_getter::RibFile};
 use rayon::ThreadPoolBuilder;
@@ -37,13 +37,13 @@ fn main() {
         // Download MRT files and then parse them - one file per thread
         RibsSource::Download(_) => {
             let rib_files = download_ribs_for_day(args.get_ribs_ymd(), args.get_ribs_path());
-            parse_rib_files(&rib_files, &args)
+            init_parallel_parsing(&rib_files, &args)
         }
 
         // Parse a single existing file - split across multiple threads
         RibsSource::File(_) => {
             let rib_files = Vec::from([RibFile::new(String::new(), args.get_rib_file().clone())]);
-            parse_rib_files(&rib_files, &args)
+            init_parallel_parsing(&rib_files, &args)
         }
 
         // Parse multiple existing files - one file per thread
@@ -57,7 +57,7 @@ fn main() {
                 })
                 .collect();
 
-            parse_rib_files(&rib_files, &args);
+            init_parallel_parsing(&rib_files, &args);
         }
     };
 }

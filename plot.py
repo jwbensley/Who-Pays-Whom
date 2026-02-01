@@ -132,7 +132,11 @@ def plot_peerings(data: dict[str, Any]) -> None:
                     continue
 
                 peer_types = set(
-                    list(locations[location.name]["peerings_in_loc"].keys())
+                    sorted(
+                        list(
+                            locations[location.name]["peerings_in_loc"].keys()
+                        )
+                    )
                 )
                 all_data[t1_asn][loc_index + 1].append(
                     f"{', '.join(peer_types)}"

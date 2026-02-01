@@ -9,7 +9,14 @@ pub mod asn {
         7018, 12956,
     ];
 
-    static SKIP_ASNS: [u32; 1] = [37468];
+    // Two tuples of ASN and route collector filename where the ASN is seen.
+    static SKIP_ASNS: [(u32, &str); 5] = [
+        (37468, "route-views.napafrica.rib.20260131.0000.bz2"),
+        (37468, "route-views.ix-br2.gru.rib.20260131.0000.bz2"),
+        (37468, "route-views2.saopaulo.rib.20260131.0000.bz2"),
+        (37468, "route-views3.rib.20260131.0000.bz2"),
+        (37468, "ris.rrc19.bview.20260131.0000.gz"),
+    ];
 
     #[derive(Debug, Clone, PartialEq, Eq, Hash)]
     pub struct MrtAsn(Asn);
@@ -43,8 +50,8 @@ pub mod asn {
         }
 
         /// Some ASNs seem to be sending incorrect data to route collectors
-        pub fn is_skip_asn(&self) -> bool {
-            SKIP_ASNS.contains(&self.0.to_u32())
+        pub fn is_skip_asn(&self, filename: &str) -> bool {
+            SKIP_ASNS.contains(&(self.0.to_u32(), filename))
         }
 
         pub fn is_t1_asn(&self) -> bool {
