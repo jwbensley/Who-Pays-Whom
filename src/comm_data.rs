@@ -349,6 +349,9 @@ pub fn insert_comm_mapping(asn_mappings: &mut HashMap<MrtAsn, CommMappings>) {
         CommMappings::new(
             HashMap::from([
                 (StandardCommunity::new(5511, 666), PeerType::Peer),
+                (StandardCommunity::new(5511, 999), PeerType::Customer),
+                // These old style communities are unreliable for determining the relationship type.
+                // There are routes with conflicting communities.
                 // (StandardCommunity::new(5511, 680), PeerType::Peer),
                 // (StandardCommunity::new(5511, 700), PeerType::Peer),
                 // (StandardCommunity::new(5511, 710), PeerType::Peer),
@@ -362,7 +365,6 @@ pub fn insert_comm_mapping(asn_mappings: &mut HashMap<MrtAsn, CommMappings>) {
                 // (StandardCommunity::new(5511, 640), PeerType::Customer),
                 // (StandardCommunity::new(5511, 650), PeerType::Customer),
                 // (StandardCommunity::new(5511, 680), PeerType::Customer),
-                (StandardCommunity::new(5511, 999), PeerType::Customer),
             ]),
             HashMap::from([
                 (

@@ -9,7 +9,8 @@ pub mod asn {
         7018, 12956,
     ];
 
-    // Two tuples of ASN and route collector filename where the ASN is seen.
+    // Skip ASNs which are contributing inaccurate/invalid data to route collectors.
+    // Two tuples of ASN and route collector filenames, where the ASN is seen.
     static SKIP_ASNS: [(u32, &str); 6] = [
         (37468, "route-views.napafrica.rib.20260131.0000.bz2"),
         (37468, "route-views.ix-br2.gru.rib.20260131.0000.bz2"),
