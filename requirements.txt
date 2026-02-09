@@ -1,0 +1,9 @@
+librt==0.7.8
+mypy==1.19.1
+mypy_extensions==1.1.0
+narwhals==2.15.0
+packaging==26.0
+pathspec==1.0.4
+plotly==6.5.2
+plotly-stubs==0.1.2
+typing_extensions==4.15.0

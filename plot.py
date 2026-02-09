@@ -320,6 +320,7 @@ def plot_peerings(data: dict[str, Any]) -> None:
         filename=PEERING_OUTPUT,
         auto_open=False,
     )
+    print(f"Wrote to {PEERING_OUTPUT}")
 
 
 def write_json(data: dict[str, Any], filename: str):
