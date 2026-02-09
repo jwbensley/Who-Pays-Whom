@@ -135,7 +135,10 @@ pub mod mrt_parser {
         let parser = BgpkitParser::new(fp.as_str())
             .unwrap_or_else(|_| panic!("Unable to parse MRT file {}", fp));
 
-        let mrt_record = parser.into_record_iter().next().unwrap();
+        let mrt_record = parser
+            .into_record_iter()
+            .next()
+            .unwrap_or_else(|| panic!("Unable to extract first record from {}", fp));
 
         if let MrtMessage::TableDumpV2Message(TableDumpV2Message::PeerIndexTable(peer_table)) =
             &mrt_record.message

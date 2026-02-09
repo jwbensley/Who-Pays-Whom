@@ -1,2 +1,4 @@
-mrts/
+results/peering_data_mirrored.json
+results/triple_t1_paths.json
 target/
+.venv/
