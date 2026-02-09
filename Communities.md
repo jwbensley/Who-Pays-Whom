@@ -44,8 +44,7 @@ Sources:
 * <https://www.vodafone.com/business/privacy/customer-taggable-community-attribute-values>
 * <https://portal.vodafone.com/web/lookingglass>
 * <https://bgp.tools/communities/1273>
-
-Emailed Ben, waiting for response:
+* Still waiting on response to email with Vodafone
 
 Communities:
 
@@ -286,13 +285,12 @@ Communities:
 6453:86 Peer Route
 ```
 
-## AS6461 ############################################
+## AS6461
 
 Sources:
 
 * <https://bgp.tools/communities/6461>
-
-No verification of these - waiting on email response
+* Still waiting on email response from Zayo
 
 Communities:
 
@@ -325,14 +323,12 @@ Communities:
 6762:40 Route learnt from a customer
 ```
 
-## AS6830 ############################################
+## AS6830
 
 Sources:
 
 * <https://lg.aorta.net/app>
 * <https://bgp.tools/communities/6830>
-
-Unconfirmed
 
 Communities
 
@@ -360,7 +356,8 @@ Communities
 
 Sources:
 
-* Email with HE
+* <https://bgp.tools/communities/6939>
+* Via email with HE
 
 Communities:
 
@@ -378,11 +375,11 @@ Communities:
 6939:9XXX Region ID (1=North America, 2=EU, 3=APAC, 4=Africa, 5=South America, 6=Oceania, 7=Middle East)
 ```
 
-## AS7018 ############################################
+## AS7018
 
 Sources:
 
-Unconfirmed
+* <https://bgp.tools/communities/7018>
 
 Communities:
 
@@ -394,7 +391,7 @@ Communities:
 ## AS12956
 
 * <https://telxius.com/en/looking-glass-service/>
-* Email with Telxius
+* Via email with Telxius
 
 Communities:
 
