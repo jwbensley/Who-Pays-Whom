@@ -7,7 +7,7 @@
 
 ## Results
 
-[View Result Table](results/peerings.html)
+[View Result Table](https://htmlpreview.github.io/?https://github.com/jwbensley/wpw/blob/main/results/peerings.html)
 
 Unfortunately RIS and RVs don't have great Tier 1 coverage. Also, most of the Tier 1 data visible via RIS and RV comes via customers, and some Tier 1s don't send informational communities unless explicitly requested, or only send them to peers not customers.
 
