@@ -17,6 +17,8 @@ Of course, they split the world in different regions and peer types, there is no
 
 Unfortunately RIS and RVs don't have great Tier 1 coverage. Also, most of the Tier 1 data visible via RIS and RV comes via customers, and some Tier 1s don't send informational communities unless explicitly requested, or only send them to peers, not customers.
 
+A empty square in the results table simply means that there is no data available via RIS and RouteViews to confirm if the peering exists or not, it doesn't mean there is definitely no peering, or maybe routes were seen via RIS/RV between these two ASNs but they had no informational communities attached to indicate the relationship type or location.
+
 * AS1273 Vodafone are not transit free, they use AS1299 Arelion in North America for connectivity.
 * AS6461 Zayo are not transit free, they use AS2914 NTT in Asia for connectivity, AS3491 PCCW in Asia for connectivity, and AS6762 TISparkle in South America for connectivity.
 * AS6939 Hurricane Electric are not transit free, they use AS1299 Arelion in Europe and North America for connectivity.
