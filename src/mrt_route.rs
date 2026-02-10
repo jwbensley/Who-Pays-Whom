@@ -100,5 +100,9 @@ pub mod route {
         pub fn get_peer_type(&self) -> &PeerType {
             &self.peer_type
         }
+
+        pub fn get_prefix(&self) -> &IpNet {
+            &self.prefix
+        }
     }
 }

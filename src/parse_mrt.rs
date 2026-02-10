@@ -4,7 +4,7 @@ pub mod mrt_parser {
     use crate::mrt_communities::standard_communities::StandardCommunities;
     use crate::mrt_peer::peer::PeerTable;
     use crate::mrt_route::route::Route;
-    use crate::peer_attrs::peer_data::{PeerLocation, PeerType};
+    use crate::peer_attrs::peer_data::PeerType;
     use crate::peerings::peering_data::PeeringData;
     use crate::triple_paths::triple_t1_paths::TripleT1Paths;
     use bgpkit_parser::models::{
@@ -95,6 +95,7 @@ pub mod mrt_parser {
             // In this case we need to check AS3-AS2 communities and AS2-AS1 communities.
             if asn_1.is_t1_asn() {
                 let pos_1 = as_sequence.iter().position(|x| x == asn_1).unwrap();
+
                 if pos_1 == as_sequence.len() - 1 {
                     // Last ASN in the path
                     break;
@@ -288,9 +289,7 @@ pub mod mrt_parser {
     }
 
     fn add_peering(global_peerings: &Arc<RwLock<PeeringData>>, route: &Route) {
-        if *route.get_peer_type() != PeerType::NoneFound
-            && *route.get_peer_location() != PeerLocation::NoneFound
-        {
+        if *route.get_peer_type() != PeerType::NoneFound {
             let has_peering: bool;
             {
                 let lock = global_peerings.read().unwrap();
