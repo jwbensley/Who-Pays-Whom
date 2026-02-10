@@ -19,7 +19,7 @@ Unfortunately RIS and RVs don't have great Tier 1 coverage. Also, most of the Ti
 
 * AS1273 Vodafone are not transit free, they use AS1299 Arelion in North America for connectivity.
 * AS6461 Zayo are not transit free, they use AS2914 NTT in Asia for connectivity, AS3491 PCCW in Asia for connectivity, and AS6762 TISparkle in South America for connectivity.
-* AS6969 Hurricane Electric are not transit free, they use AS1299 Arelion in Europe and North America for connectivity.
+* AS6939 Hurricane Electric are not transit free, they use AS1299 Arelion in Europe and North America for connectivity.
   * AS6939 also don't peer with AS174 Cogent, and despite taking IPv4 and IPv6 transit from AS1299, AS6939 don't have IPv6 connectivity with AS174.
   * This means that AS174 and AS6939 are perhaps the only two "Tier 1s" that don't actually have full table connectivity?
 
