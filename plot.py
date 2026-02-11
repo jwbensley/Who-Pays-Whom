@@ -291,7 +291,7 @@ def plot_peerings(data: dict[str, Any]) -> None:
                                     title=fig_title
                                     | dict(
                                         subtitle=dict(
-                                            text=f"Peerings found for AS{t1_asn} ({T1_ASNS[t1_asn]})",
+                                            text=f"Peerings found from the perspective of AS{t1_asn} ({T1_ASNS[t1_asn]})",
                                             font=dict(size=18),
                                         ),
                                     )
@@ -309,7 +309,7 @@ def plot_peerings(data: dict[str, Any]) -> None:
         title=fig_title
         | dict(
             subtitle=dict(
-                text=f"Peerings found for AS{list(T1_ASNS.keys())[0]} ({list(T1_ASNS.values())[0]})",
+                text=f"Peerings found from the perspective of AS{list(T1_ASNS.keys())[0]} ({list(T1_ASNS.values())[0]})",
                 font=dict(size=18),
             ),
         ),
