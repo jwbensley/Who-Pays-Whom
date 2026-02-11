@@ -329,6 +329,7 @@ Sources:
 
 * <https://lg.aorta.net/app>
 * <https://bgp.tools/communities/6830>
+* Confirmed via DM
 
 Communities
 
@@ -336,7 +337,7 @@ Communities
 6830:13000 Customer prefix
 6830:16000 Learned from public peers (via an IXP)
 6830:17000 Learned from private peers
-6830:23001 ???
+6830:23001 Propagated through a route reflector
 
 6830:343xx Learned in Austria
 6830:332xx Learned in Belgium
